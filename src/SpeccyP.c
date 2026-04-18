@@ -114,8 +114,9 @@ char afilename[LENF];
 //===============================================================
 void nmi_zx()
 {
-   if (main_nmi_key)  
-   z80_nmi(&z1->cpu);
+    if (z1->cpu.nmia != Z_NULL) 
+    // invoke NMI request if machine-specific NMI rom switcher is defined
+        z80_nmi(&z1->cpu);
 }
 //--------------------------------------------------
 

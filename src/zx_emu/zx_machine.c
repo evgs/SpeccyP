@@ -2776,7 +2776,6 @@ void init_mashine_and_extram(uint8_t config_mashine) // инициализаци
 */
 //conf.shift_img=(((16+40)*224)+48);//
     conf.shift_img=12582;
-    main_nmi_key = false;
     select_cpu_z80(z1);
 
 	switch (config_mashine)
@@ -2797,7 +2796,6 @@ void init_mashine_and_extram(uint8_t config_mashine) // инициализаци
     machine_Pentagon_1024(z1);
 		break; //
 	case SCORP256:
-        main_nmi_key = true;
         machine_Scorpion_256(z1);   
 		break; //
  
@@ -2808,7 +2806,6 @@ void init_mashine_and_extram(uint8_t config_mashine) // инициализаци
     //  #endif    
 
 	case NOVA256:
-          main_nmi_key = true;
           machine_NOVA_256(z1);
 		break; //
 
@@ -2817,7 +2814,6 @@ void init_mashine_and_extram(uint8_t config_mashine) // инициализаци
 		break; //
 
 	case PENT_512CASH :// Пентагон 512 с кеш
-        main_nmi_key = true;
         machine_Pentagon_512_cash(z1);
 		break; //
 

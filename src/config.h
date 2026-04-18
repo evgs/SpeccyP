@@ -331,8 +331,6 @@ extern uint8_t type_psram;
 //---------------------------------
 // other
 extern char temp_msg[80]; // Буфер для вывода строк
-//Quorum
-extern bool main_nmi_key ;
 //
 extern bool im_z80_stop;
 //
