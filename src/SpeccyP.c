@@ -295,15 +295,15 @@ extern ZX_Input_t zx_input;
 	"https://t.me/const_bill",
 	
 };
-	// меню ram
-	char __in_flash() *menu_ram[9]={
-	//char*  menu_ram[7]={	
-	" Pentagon 128     ",
-    " ZX Spectrum 48   ",
-	" Pentagon 512     ",
-	" Pentagon 1024    ",
-	" Scorpion ZS 256  ",
-	//" Profi       1024 ",
+
+// меню ram
+ZxMachineVariant __in_flash() variants[] = 
+{
+    { " Pentagon 128     ", false , PENT128 },
+    { " ZX Spectrum 48   ", false , SPEC48 },
+    { " Pentagon 512     ", true , PENT512 },
+    { " Pentagon 1024    ", true , PENT1024 },
+    { " Scorpion ZS 256  ", true , SCORP256 },
  #ifdef NO_GMX
     { " No  ScorpionGMX  ", true , GMX2048 },
  #else         
@@ -1976,7 +1976,7 @@ void setup_zx(void)
     }
     else
 	{
-	//	if (conf.mashine > 1) conf.mashine = 0;
+		if (conf.mashine > 1) conf.mashine = 0;
 	//	draw_text(x1 + 206, y1 + 3, "128Kb", CL_BLACK, CL_GRAY);
 	}
 
