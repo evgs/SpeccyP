@@ -1976,7 +1976,7 @@ void setup_zx(void)
     }
     else
 	{
-		if (conf.mashine > 1) conf.mashine = 0;
+	//	if (conf.mashine > 1) conf.mashine = 0;
 	//	draw_text(x1 + 206, y1 + 3, "128Kb", CL_BLACK, CL_GRAY);
 	}
 
