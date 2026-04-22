@@ -280,6 +280,22 @@ if ((zx_0000_lastOut&0b00100000) == 0)
 	return;
 	break;
 
+case NOVA128:
+	//	rom_n =  ((zx_7ffd_lastOut & 0x10)>>4) | ((zx_0000_lastOut & 0x20)>>5) ;// 0001.0000 0000.1000 0000.0100 0000.0010 0000.0001
+	//	zx_cpu_ram[0] =  zx_rom_bank[ table_nova256 [rom_n] ];
+
+    if ((zx_0000_lastOut&0b00100000) == 0) {
+	    rom=3;
+        zx_cpu_ram[0] = zx_rom_bank[3]; 
+    }
+	else 
+	{
+		rom=(zx_7ffd_lastOut & 0x10)>>4; 
+		zx_cpu_ram[0]=zx_rom_bank[(zx_7ffd_lastOut & 0x10)>>4]; 
+	} 
+	return;
+	break;
+
 case SCORP256:
 
 if ((zx_1ffd_lastOut & 0x02) == 0x02)
@@ -961,6 +977,17 @@ inline void fast (zx_machine_set_7ffd_out)(uint8_t val)// переключени
 //-----------------------------------------------------------------------------------
 	case NOVA256/* nova 256 */:
 	   zx_RAM_bank_active  = (((val&0b10000000))|(val&0b00000111)); // d0 d1 d2  и d6 d7 7ffd
+        if (val& 0x20) zx_state_48k_MODE_BLOCK=true; // 5bit = 1 48k mode block
+        //        76543210  5 bit
+        zx_RAM_bank_7ffd = (val&0b00000111) ; // d0 d1 d2  7ffd
+	   zx_cpu_ram[3]=zx_ram_bank[zx_RAM_bank_7ffd];
+	
+	   if (val&8) zx_video_ram=zx_ram_bank[7];   else zx_video_ram=zx_ram_bank[5];	
+       rom_select(); // переключение ПЗУ по портам и по сигналу DOS
+
+	return; // выход нафиг	
+	case NOVA128/* nova 256 */:
+	   zx_RAM_bank_active  = (val&0b00000111); // d0 d1 d2 7ffd
         if (val& 0x20) zx_state_48k_MODE_BLOCK=true; // 5bit = 1 48k mode block
         //        76543210  5 bit
         zx_RAM_bank_7ffd = (val&0b00000111) ; // d0 d1 d2  7ffd
@@ -1957,6 +1984,43 @@ void machine_NOVA_256(Machine *self)
 		pent_config = NOVA256;
 		ticks_per_frame=71680 ;// 71680- Пентагон //70908 - 128 +2A // 70784 Scorpion
         }
+
+void machine_NOVA_128(Machine *self) {
+    self->cpu.context      = self;
+    #ifdef MURM1
+    if (psram_type) {
+        self->cpu.fetch_opcode = (Z80Read )read_z80_ext;
+        self->cpu.fetch        = (Z80Read )read_z80_ext;
+        self->cpu.nop          = (Z80Read )read_z80_ext;
+        self->cpu.read         = (Z80Read )read_z80_ext;
+        self->cpu.write        = (Z80Write)write_z80_ext;
+    }
+    else
+    #endif
+    {
+        self->cpu.fetch_opcode = (Z80Read )_read_z80_ext;
+        self->cpu.fetch        = (Z80Read )_read_z80_ext;
+        self->cpu.nop          = (Z80Read )_read_z80_ext;
+        self->cpu.read         = (Z80Read )_read_z80_ext;
+        self->cpu.write        = (Z80Write)_write_z80_ext;
+    }
+    self->cpu.in           = (Z80Read )in_z80;
+    self->cpu.out          = (Z80Write)nova_256;
+    self->cpu.halt         = Z_NULL;
+    self->cpu.nmia         = (Z80Read )nmi_NOVA_256;
+    self->cpu.inta         = Z_NULL;//= (Z80Read )inta_callback;
+    self->cpu.int_fetch    = Z_NULL;
+    self->cpu.ld_i_a       = Z_NULL;
+    self->cpu.ld_r_a       = Z_NULL;
+    self->cpu.reti         = Z_NULL;
+    self->cpu.retn         = Z_NULL;
+    self->cpu.hook         = Z_NULL;
+    self->cpu.illegal      = Z_NULL;
+    
+    pent_config = NOVA128;
+    ticks_per_frame=71680 ;// 71680- Пентагон //70908 - 128 +2A // 70784 Scorpion
+    }
+
 // MurmoZavr 8Mb      
 void machine_MurmoZavr(Machine *self)
         {
@@ -2067,6 +2131,32 @@ void init_rom_ram(uint8_t rom_x)
  return; // выход нафиг больше тут делать нечего
 
 break;
+
+case NOVA128:
+	    zx_rom_bank[0]=&ROM_128Q[0];//128k 
+	    zx_rom_bank[1]=&ROM_48Q[0*16384];//48k 
+		zx_rom_bank[2]=&ROM_Qtr[0*16384];//TRDOS 6.04
+	    zx_rom_bank[3]=&ROM_Qsm[0*16384];//NAVIGATOR
+		rom=3;
+	    zx_cpu_ram[0]=zx_rom_bank[3]; // 0x0000 - 0x3FFF с какой банки стартовать
+
+	zx_RAM_bank_active =0x00;
+	zx_RAM_bank_7ffd =0x00;
+    zx_RAM_bank_1ffd =0x00;
+    zx_RAM_bank_dffd =0x00;
+    zx_RAM_bank_ext8 =0x00;
+
+
+	zx_state_48k_MODE_BLOCK = false;
+
+	zx_vbuf[0].is_displayed = true;
+	zx_vbuf[0].data = g_gbuf;
+	zx_vbuf_active = &zx_vbuf[0];
+
+ return; // выход нафиг больше тут делать нечего
+
+break;
+
 #ifndef NO_GMX
     case GMX2048 :
     zx_rom_bank[0]=&ROM_128K[0*16384];//128k 
@@ -2808,6 +2898,10 @@ void init_mashine_and_extram(uint8_t config_mashine) // инициализаци
 	case NOVA256:
           machine_NOVA_256(z1);
 		break; //
+    
+    case NOVA128:
+        machine_NOVA_128(z1);
+        break;
 
 	case PENT8M:
           machine_MurmoZavr(z1);
