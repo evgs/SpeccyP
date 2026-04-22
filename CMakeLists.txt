@@ -13,11 +13,22 @@ if (EXISTS ${picoVscode})
     include(${picoVscode})
 endif()
 # ====================================================================================
+# Find Git package
+find_package(Git REQUIRED)
+
+# Execute git describe
+execute_process(
+    COMMAND ${GIT_EXECUTABLE} describe --tags --always --dirty
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    OUTPUT_VARIABLE GIT_VERSION
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET
+)
 # Устанавливаем параметры платы и чипа и так далее
 set(PICO_BOARD pico CACHE STRING "Board type")
 
 # == Конфигурация  SpeccyP ==
-set (BASE_VERSION "1.5.8Q")
+set (BASE_VERSION "${GIT_VERSION}")
 set(MOS2 OFF) # компиляция под MOS2 ON
 
 # Конфигурация сборки (можно задать через -DSPECCY_CONFIG=... и -DM_BOARD=...)
