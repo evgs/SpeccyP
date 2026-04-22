@@ -17,7 +17,7 @@ endif()
 set(PICO_BOARD pico CACHE STRING "Board type")
 
 # == Конфигурация  SpeccyP ==
-set (BASE_VERSION "1.5.7 ")
+set (BASE_VERSION "1.5.8Q")
 set(MOS2 OFF) # компиляция под MOS2 ON
 
 # Конфигурация сборки (можно задать через -DSPECCY_CONFIG=... и -DM_BOARD=...)
