@@ -2,6 +2,8 @@
 
 #include <stdio.h>
 
+#include "SpeccyP.h"
+
 #include "hardware/gpio.h"
 //#include "hardware/adc.h"
 
@@ -303,24 +305,58 @@ extern ZX_Input_t zx_input;
 	" Scorpion ZS 256  ",
 	//" Profi       1024 ",
  #ifdef NO_GMX
-     " No  ScorpionGMX ", 
+    { " No  ScorpionGMX  ", true , GMX2048 },
  #else         
-	" ScorpionGMX 2048 ",
+    { " ScorpionGMX 2048 ", true , GMX2048 },
  #endif
-	//" Unreal      4096 ",
-    " Navigator 256    ",
-    " MurmoZavr 8000K  ",
-    " Pentagon 512CASH ",
-};
+    { " Navigator 256    ", true , NOVA256 },
+    { " MurmoZavr 8000K  ", true , PENT8M },
+    { " Pentagon 512CASH ", true , PENT_512CASH },
+    { " Quorum 128       ", false , NOVA128 },
+}; 
 
-	// меню menu_ram_128_48
-	char __in_flash() *menu_ram_128_48[2]={
-        //char*  menu_ram[7]={	
-        " Pentagon 128     ",
-        " ZX Spectrum 48   ",
-       };
-	// меню sound
-	 char __in_flash() *menu_sound[8]={
+#define ZX_VARIANTS_TOTAL (sizeof(variants) / sizeof(ZxMachineVariant))
+
+
+static int variantsCount = 0;
+static char *menu_machineNames[16]; //TODO fix hardcode
+static int menu_id[16]; //TODO fix hardcode
+
+int getZxMachineVariantCount() {
+    return variantsCount;
+}
+
+void filterZxMachines(bool psram) {
+    for (int i = 0; i < ZX_VARIANTS_TOTAL; i++) {
+        //skip ram-hungry machine if no PSRAM 
+        if ((!psram) && (variants[i].NeedPSRAM)) continue;
+        menu_machineNames[variantsCount] = variants[i].name;
+        menu_id[variantsCount] = variants[i].id;
+        variantsCount++;
+    }
+}
+
+
+char ** getZxMachineNames() {
+    return menu_machineNames;
+}
+int * getZxMachineIds() {
+    return menu_id;
+}
+
+
+
+const ZxMachineVariant  *getZxMachineVariant(int machineIndex) {
+    for (int i = 0; i < ZX_VARIANTS_TOTAL; i++) {
+        ZxMachineVariant *variant = & (variants[i]);
+        if (variant->id == machineIndex)
+            return variant;
+    }
+    return NULL;
+}
+
+// меню sound
+char __in_flash() *menu_sound[8]={
 	//char*  menu_sound[4]={	
 	" Soft AY-3-8910  ",
 	" Soft TurboSound ",
@@ -938,7 +974,6 @@ switch (type_psram)
 {
 case NOT_PSRAM:
     draw_text_len(10+XPOS,y_info,"PSRAM not found",CL_RED,CL_BLACK,16); 
-    if (conf.mashine > 1) conf.mashine = 0;// only 128kB
     psram_avaiable =0;
     break;
 case BUTTER_PSRAM:
@@ -955,16 +990,18 @@ case BOARD_PSRAM:
     break;
 case NOT_PSRAM_PIN21:    
 	draw_text(10+XPOS,y_info,"NO PSRAM / Clock AY on pin21",CL_LT_PINK,CL_BLACK);
-    if (conf.mashine > 1) conf.mashine = 0;// only 128kB
     psram_avaiable = 0;
     break;
 case BOARD_PSRAM_NOSUPORT:
     snprintf(temp_msg, sizeof temp_msg, "PSRAM board is not supported");
 	draw_text(10+XPOS,y_info,temp_msg,CL_BLUE,CL_BLACK);
-    if (conf.mashine > 1) conf.mashine = 0;// only 128kB
     psram_avaiable =0;
     break;
 }
+
+    filterZxMachines(psram_avaiable);
+    if (getZxMachineVariant(conf.mashine)->NeedPSRAM && !psram_avaiable) conf.mashine = PENT128;
+
 
         #ifdef TEST_DEBUG
 uint8_t table_voltage[] = {55,60,65,70,75,80,85,90,95,100,105,110,115,120,125,130,135,140,150,160,165};
@@ -1004,7 +1041,7 @@ snprintf(temp_msg, sizeof temp_msg, " FLASH   %dMHz", real_flash_freq);
         #endif
 
 // информация из setup
-draw_text(6+FONT_W,75+YPOS,menu_ram[conf.mashine],CL_GRAY,CL_BLACK);
+draw_text(6+FONT_W,75+YPOS, getZxMachineVariant(conf.mashine)->name, CL_GRAY, CL_BLACK);
 
 #ifndef  GENERAL_SOUND     
 draw_text(6+FONT_W,85+YPOS,menu_sound[conf.type_sound],CL_GRAY,CL_BLACK);    
@@ -1939,7 +1976,7 @@ void setup_zx(void)
     }
     else
 	{
-		if (conf.mashine > 1) conf.mashine = 0;
+	//	if (conf.mashine > 1) conf.mashine = 0;
 	//	draw_text(x1 + 206, y1 + 3, "128Kb", CL_BLACK, CL_GRAY);
 	}
 
@@ -1948,7 +1985,7 @@ void setup_zx(void)
     while (1)
     {  
         draw_rect(30, 40, 240,155, CL_BLACK, true);				   // рамка 3 фон
-        draw_text(x1 + 120, y1 +20             , menu_ram[conf.mashine], CL_GRAY, CL_BLACK);
+        draw_text(x1 + 120, y1 +20, getZxMachineVariant(conf.mashine)->name, CL_GRAY, CL_BLACK);
 
       #ifdef GENERAL_SOUND
         draw_text(x1 + 126, y1 + 20+ M_SOUND*10, "GeneralSound + TS", CL_GRAY, CL_BLACK);
@@ -1974,30 +2011,16 @@ void setup_zx(void)
                        numsetup = MenuBox_bw(30, 20, 18, 15, menu_setup,15, numsetup, 1);
 
 //---
-        if (psram_avaiable)
-        {
-            if (numsetup == M_RAM)
-            {
-                uint8_t x = MenuBox(90, 52, 17, 9, "Model & RAM", menu_ram, 9, conf.mashine, 1);
-               if (x==0xff) continue;
-               #ifdef NO_GMX
-               if (x==0x05) continue;
-               #endif
-                conf.mashine  = x;
-                init_mashine_and_extram(conf.mashine);
-                continue;
-            }
-        }
-        else // только 128 и 48 машина
-        {
-            if (numsetup == M_RAM)
-            {
-            uint8_t x = MenuBox(90, 52, 17, 2, "RAM Seting", menu_ram_128_48, 2, conf.mashine, 1);
+        if (numsetup == M_RAM) {
+            //todo get menu index
+            uint8_t x = MenuBox(90, 52, 17, 9, "Model & RAM", getZxMachineNames(), getZxMachineVariantCount(), 0 /*conf.mashine*/, 1);
             if (x==0xff) continue;
-            conf.mashine  = x;
+            #ifdef NO_GMX
+            if (x==0x05) continue;
+            #endif
+            conf.mashine  = getZxMachineIds()[x];
             init_mashine_and_extram(conf.mashine);
             continue;
-            }
         }
 
 
