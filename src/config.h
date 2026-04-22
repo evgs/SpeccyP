@@ -103,17 +103,20 @@ extern uint32_t dtcpu;
 #define FW_AUTHOR "Speccy_P"
  
 //-----------------------------------------------------------------------------------------------
-#define PENT128  0
-#define SPEC48 1
-#define PENT512  2
-#define PENT1024 3
-#define SCORP256 4
-//#define PROFI1024 5// отключено
-#define GMX2048  5
-//#define ZX4096 7// отключенно
-#define NOVA256 6
-#define PENT8M 7
-#define PENT_512CASH 8
+enum {
+    PENT128 = 0,
+    SPEC48 = 1,
+    PENT512 = 2,
+    PENT1024 = 3,
+    SCORP256 = 4,
+    //PROFI1024 = 5, // отключено
+    GMX2048 = 5,
+    //ZX4096 = 7, // отключенно
+    NOVA256 = 6,
+    PENT8M = 7,
+    PENT_512CASH = 8,
+    NOVA128 = 9,
+};
 
 //
 #define CONF_MASHINE PENT128 
