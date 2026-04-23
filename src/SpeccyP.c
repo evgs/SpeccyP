@@ -1462,7 +1462,7 @@ int fast(main)(void){
             if (((kb_st_ps2.u[3] & KB_U3_F3) | (joy_key_ext == 0x81)) )  { load_slot();  TAP_RestorePage(); }  // [START]+стрелка вправо - вход в меню LOAD
             if (kb_st_ps2.u[3] & KB_U3_F5)   save_all(); // запись всей памяти и файла конфигурации
             if (END) disasm(); // Дизассемблер
-            if (HOME) disasm(); // for minikeyboard without HOME key
+            if (F6) disasm(); // for minikeyboard without HOME key
             if (F10) // TURBO
                 { conf.turbo++;
                   turbo_switch();
