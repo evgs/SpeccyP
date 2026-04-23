@@ -25,7 +25,7 @@ execute_process(
     ERROR_QUIET
 )
 # Устанавливаем параметры платы и чипа и так далее
-set(PICO_BOARD pico2 CACHE STRING "Board type")
+set(PICO_BOARD pico CACHE STRING "Board type")
 
 set(DEBUG OFF)
 
