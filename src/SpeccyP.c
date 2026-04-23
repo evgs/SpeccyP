@@ -355,8 +355,28 @@ const ZxMachineVariant  *getZxMachineVariant(int machineIndex) {
     return NULL;
 }
 
-// меню sound
-char __in_flash() *menu_sound[8]={
+
+#ifdef RP2350_256K
+	// меню menu_ram_48_128_256
+	char __in_flash() *menu_ram_128_48[4]={
+        //char*  menu_ram[7]={	
+        " Pentagon 128     ",
+        " ZX Spectrum 48   ",
+        " Scorpion ZS 256  ",
+        " Navigator 256    ",
+       };
+#else
+	// меню menu_ram_128_48
+	char __in_flash() *menu_ram_128_48[2]={
+        //char*  menu_ram[7]={	
+        " Pentagon 128     ",
+        " ZX Spectrum 48   ",
+       };
+#endif
+
+
+	// меню sound
+	 char __in_flash() *menu_sound[8]={
 	//char*  menu_sound[4]={	
 	" Soft AY-3-8910  ",
 	" Soft TurboSound ",
@@ -974,8 +994,21 @@ switch (type_psram)
 {
 case NOT_PSRAM:
     draw_text_len(10+XPOS,y_info,"PSRAM not found",CL_RED,CL_BLACK,16); 
+    //TODO machine filter - reset to PENT128 if not fit in memory
+    // #ifdef RP2350_256K
+	// {
+	// 	if (conf.mashine==PENT128||conf.mashine==SPEC48||conf.mashine==SCORP256||conf.mashine==NOVA256) conf.mashine = conf.mashine;
+    //     else conf.mashine = SCORP256;    
+	// }
+    // #else
+	// {
+	// 	if (conf.mashine > 1) conf.mashine = 0;
+	// }
+    // #endif
     psram_avaiable =0;
     break;
+
+
 case BUTTER_PSRAM:
     snprintf(temp_msg, sizeof temp_msg, "PSRAM %d Mb QSPI CS:%d", size_psram, psram_pin_cs );//BUTTER  'butter'
 	draw_text(10+XPOS,y_info,temp_msg,CL_GREEN,CL_BLACK);
@@ -988,13 +1021,25 @@ case BOARD_PSRAM:
     psram_type = 1;
     psram_avaiable =1;
     break;
-case NOT_PSRAM_PIN21:    
+/* case NOT_PSRAM_PIN21:    
 	draw_text(10+XPOS,y_info,"NO PSRAM / Clock AY on pin21",CL_LT_PINK,CL_BLACK);
     psram_avaiable = 0;
-    break;
+    break; */
 case BOARD_PSRAM_NOSUPORT:
     snprintf(temp_msg, sizeof temp_msg, "PSRAM board is not supported");
 	draw_text(10+XPOS,y_info,temp_msg,CL_BLUE,CL_BLACK);
+
+    //TODO limit config if no PSRAM available
+    // #ifdef RP2350_256K
+	// {
+	// 	if (conf.mashine==PENT128||conf.mashine==SPEC48||conf.mashine==SCORP256||conf.mashine==NOVA256) conf.mashine = conf.mashine;
+    //     else conf.mashine = SCORP256;    
+	// }
+    // #else
+	// {
+	// 	if (conf.mashine > 1) conf.mashine = 0;
+	// }
+    // #endif
     psram_avaiable =0;
     break;
 }
@@ -1409,12 +1454,12 @@ int fast(main)(void){
 
 //########################################################################################           
                 // меню если is_menu_mode =true файловое меню
-                if ((is_menu_mode) && (!trdos))   file_manager();// файловое меню                   
+                if ((is_menu_mode) && (!trdos))   { file_manager(); TAP_RestorePage(); }// файловое меню
 //########################################################################################
     if ((!is_menu_mode)) // что нажимается вне файлового менеджера
-    {  
-            if (((kb_st_ps2.u[3] & KB_U3_F2) | (joy_key_ext== 0x82)) )  save_slot();   // [START]+стрелка влево - вход в меню SAVE
-            if (((kb_st_ps2.u[3] & KB_U3_F3) | (joy_key_ext == 0x81)) )  load_slot();   // [START]+стрелка вправо - вход в меню LOAD
+    {
+            if (((kb_st_ps2.u[3] & KB_U3_F2) | (joy_key_ext== 0x82)) )  { save_slot();  TAP_RestorePage(); }  // [START]+стрелка влево - вход в меню SAVE
+            if (((kb_st_ps2.u[3] & KB_U3_F3) | (joy_key_ext == 0x81)) )  { load_slot();  TAP_RestorePage(); }  // [START]+стрелка вправо - вход в меню LOAD
             if (kb_st_ps2.u[3] & KB_U3_F5)   save_all(); // запись всей памяти и файла конфигурации
             if (END) disasm(); // Дизассемблер
             if (HOME) disasm(); // for minikeyboard without HOME key
@@ -1976,10 +2021,19 @@ void setup_zx(void)
 		draw_text(x1 + 206+12, y1 + 3, temp_msg, CL_BLACK, CL_GRAY);
     }
     else
+    #ifdef RP2350_256K
 	{
-	//	if (conf.mashine > 1) conf.mashine = 0;
-	//	draw_text(x1 + 206, y1 + 3, "128Kb", CL_BLACK, CL_GRAY);
+        // TODO limit config
+		// if (conf.mashine==PENT128||conf.mashine==SPEC48||conf.mashine==SCORP256||conf.mashine==NOVA256) conf.mashine = conf.mashine;
+        // else conf.mashine = SCORP256;
+        
 	}
+    #else
+	{
+        // TODO limit config
+		// if (conf.mashine > 1) conf.mashine = 0;
+	}
+    #endif
 
 
 	// меню выбора setup
@@ -2023,7 +2077,6 @@ void setup_zx(void)
             init_mashine_and_extram(conf.mashine);
             continue;
         }
-
 
         #ifndef GENERAL_SOUND
         if (numsetup == M_SOUND)
@@ -3182,7 +3235,6 @@ void file_manager (void)
                                 conf.FileAutorunType = FDI;
                                 file_type[0] = FDI;
                                 strncpy(conf.DiskName[0], files[cur_file_index], LENF);// disk A
-                                Run_file_scl(conf.activefilename, 0);
                                 OpenFDI_File(conf.activefilename,0);
 
                                 draw_main_window(); // восстановление текста
