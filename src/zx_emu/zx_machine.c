@@ -2247,10 +2247,10 @@ void init_rom_ram(uint8_t rom_x)
  switch (conf.mashine)
  {
  case NOVA256:
-	    zx_rom_bank[0]=&ROM_128Q[0];//128k 
-	    zx_rom_bank[1]=&ROM_48Q[0*16384];//48k 
-		zx_rom_bank[2]=&ROM_Qtr[0*16384];//TRDOS 6.04
-	    zx_rom_bank[3]=&ROM_Qsm[0*16384];//NAVIGATOR
+	    zx_rom_bank[0]=&ROM_128QNova[0];//128k 
+	    zx_rom_bank[1]=&ROM_48QNova[0*16384];//48k 
+		zx_rom_bank[2]=&ROM_QtrNova[0*16384];//TRDOS 6.04
+	    zx_rom_bank[3]=&ROM_QsmNova[0*16384];//NAVIGATOR
 		rom=3;
 	    zx_cpu_ram[0]=zx_rom_bank[3]; // 0x0000 - 0x3FFF с какой банки стартовать
 
@@ -2272,12 +2272,12 @@ void init_rom_ram(uint8_t rom_x)
 break;
 
 case NOVA128:
-	    zx_rom_bank[0]=&ROM_128Q[0];//128k 
-	    zx_rom_bank[1]=&ROM_48Q[0*16384];//48k 
-		zx_rom_bank[2]=&ROM_Qtr[0*16384];//TRDOS 6.04
-	    zx_rom_bank[3]=&ROM_Qsm[0*16384];//NAVIGATOR
-		rom=3;
-	    zx_cpu_ram[0]=zx_rom_bank[3]; // 0x0000 - 0x3FFF с какой банки стартовать
+	zx_rom_bank[0]=&ROM_128QNova[0];//128k 
+	zx_rom_bank[1]=&ROM_48QNova[0*16384];//48k 
+	zx_rom_bank[2]=&ROM_QtrNova[0*16384];//TRDOS 6.04
+	zx_rom_bank[3]=&ROM_QsmNova[0*16384];//NAVIGATOR
+	rom=3;
+	zx_cpu_ram[0]=zx_rom_bank[3]; // 0x0000 - 0x3FFF с какой банки стартовать
 
 	zx_RAM_bank_active =0x00;
 	zx_RAM_bank_7ffd =0x00;
