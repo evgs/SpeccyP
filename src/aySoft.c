@@ -1604,7 +1604,7 @@ void __not_in_flash_func(hw_outpin_beep_out)(bool val)
 
 #if BEEP == 2
 /**
- * @brief Вывод бипера через микширование в PWM/I2S.
+ * @brief Вывод бипера через микширование в PWM.
  */
 void __not_in_flash_func(hw_outpin_beep_out)(bool val)
 {
@@ -1612,7 +1612,13 @@ void __not_in_flash_func(hw_outpin_beep_out)(bool val)
     beep_data = (beep_data & 0b10) | (val << 0);
     out ^= (beep_data == beep_data_old) ? 0 : 1;
     beep_data_old = beep_data;
-    beepPWM = beep_data * 256;  // Вывод бипера на ШИМ
+    beepPWM = beep_data * 64;  // Вывод бипера на ШИМ
+
+      outL = (beepPWM) * vol_soft_ay;        // A + B в левый канал
+      outR = (beepPWM) * vol_soft_ay;        // C + B в правый канал
+    pwm_set_gpio_level(ZX_AY_PWM_R, outR);  // Правый канал
+    pwm_set_gpio_level(ZX_AY_PWM_L, outL);  // Левый канал
+
 }
 #endif
 
@@ -1647,6 +1653,28 @@ void __not_in_flash_func(hw_outi2s_beep_out)(bool val)
     beep_data_old = beep_data;
     
     beepPWM = val ? vol_beep : 0;
+
+/////////////////
+ // Суммирование каналов обоих чипов
+  //  uint32_t sumL =  beepPWM ;
+        
+    // Ограничение максимального значения
+ //   sumL = (sumL > CH_TS_MAX_VALUE) ? CH_TS_MAX_VALUE : sumL;
+ //   sumR = (sumR > CH_TS_MAX_VALUE) ? CH_TS_MAX_VALUE : sumR;
+    
+    // Масштабирование через таблицу
+    uint32_t totalL = ay_scale_table[beepPWM];
+    
+    
+    // Преобразование в знаковый int16_t диапазон
+    int32_t outL = (int32_t)totalL - OUTPUT_MIDPOINT;
+        
+    // Применение громкости (умножение и сдвиг)
+    outL = (outL * volume_mult_table[current_volume]) >> 8;
+        
+    i2s_out((int16_t)outL, (int16_t)outL);
+
+////////////////
 }
 
 //==================================================================================================
