@@ -25,9 +25,11 @@
 
 #include "rom/navigator_sm508.h"// сервис монитор навигатора
 
-#include "rom/trdos604q.h" // rom navigator
-#include "rom/rom48Q.h"// 48 kb   quorum
-#include "rom/rom128Q.h"// 128 kb quorum
+#include "rom/trdos604q_nova.h" // rom navigator
+#include "rom/rom48Q_nova.h"// 48 kb   quorum
+#include "rom/rom128Q_nova.h"// 128 kb quorum
+
+#include "rom/QU7V45T5.h" // original Quorum 256-Quorum1024 rom
 
 
 //#include "rom/service.h"// сервис монитор пентагон 
@@ -2302,7 +2304,7 @@ break;
 	    zx_rom_bank[1]=&ROM_48K[0*16384];//48k 
         if (conf.trdos_version==0) zx_rom_bank[2]=&ROM_TRDOS_504T[0*16384];//TRDOS 5.04T
         else zx_rom_bank[2]=&ROM_TRDOS_505D[0*16384];//TRDOS 5.05D
-		zx_rom_bank[3]=&ROM_Qsm[0*16384];//SERVICE PENTAGON
+		zx_rom_bank[3]=&ROM_QsmNova[0*16384];//SERVICE PENTAGON //TODO
         rom=0;
 	    zx_cpu_ram[0]=zx_rom_bank[0]; // 0x0000 - 0x3FFF с какой банки стартовать
 break;
@@ -2322,7 +2324,7 @@ break;
 	    zx_rom_bank[1]=&ROM_48K_ORIGINAL[0*16384];//48k 
         if (conf.trdos_version==0) zx_rom_bank[2]=&ROM_TRDOS_504T[0*16384];//TRDOS 5.04T
         else zx_rom_bank[2]=&ROM_TRDOS_505D[0*16384];//TRDOS 5.05D
-        zx_rom_bank[3]=&ROM_Qsm[0*16384];//SERVICE PENTAGON
+        zx_rom_bank[3]=&ROM_QsmNova[0*16384];//SERVICE PENTAGON //TODO
 		rom=1;
 	
 		if (rom_x ==0) // первый запуск при включении или hard reset
@@ -2390,7 +2392,7 @@ break;
         else zx_rom_bank[2]=&ROM_TRDOS_505D[0*16384];//TRDOS 5.05D
 
        // zx_rom_bank[3]=&ROM_SV[0*16384];//SERVICE PENTAGON
-		zx_rom_bank[3]=&ROM_Qsm[0*16384];//SERVICE PENTAGON
+		zx_rom_bank[3]=&ROM_QsmNova[0*16384];//SERVICE PENTAGON //TODO
         rom=0;
 	    zx_cpu_ram[0]=zx_rom_bank[0]; // 0x0000 - 0x3FFF с какой банки стартовать
 	  break;
