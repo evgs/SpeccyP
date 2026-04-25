@@ -281,7 +281,7 @@ if ((zx_0000_lastOut&0b00100000) == 0)
 	return;
 	break;
 
-case NOVA128:
+case QUORUM128:
 	//	rom_n =  ((zx_7ffd_lastOut & 0x10)>>4) | ((zx_0000_lastOut & 0x20)>>5) ;// 0001.0000 0000.1000 0000.0100 0000.0010 0000.0001
 	//	zx_cpu_ram[0] =  zx_rom_bank[ table_nova256 [rom_n] ];
 
@@ -1040,7 +1040,7 @@ inline void fast (zx_machine_set_7ffd_out)(uint8_t val)// переключени
 
 
 	return; // выход нафиг	
-	case NOVA128/* nova 256 */:
+	case QUORUM128/* nova 256 */:
 	   zx_RAM_bank_active  = (val&0b00000111); // d0 d1 d2 7ffd
         if (val& 0x20) zx_state_48k_MODE_BLOCK=true; // 5bit = 1 48k mode block
         //        76543210  5 bit
@@ -2271,7 +2271,7 @@ void init_rom_ram(uint8_t rom_x)
 
 break;
 
-case NOVA128:
+case QUORUM128:
 	zx_rom_bank[0]=&ROM_128QNova[0];//128k 
 	zx_rom_bank[1]=&ROM_48QNova[0*16384];//48k 
 	zx_rom_bank[2]=&ROM_QtrNova[0*16384];//TRDOS 6.04
@@ -3043,7 +3043,7 @@ void init_mashine_and_extram(uint8_t config_mashine) // инициализаци
           machine_NOVA_256(z1);
 		break; //
     
-    case NOVA128:
+    case QUORUM128:
         machine_NOVA_128(z1);
         break;
 
