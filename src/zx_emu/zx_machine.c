@@ -1110,13 +1110,19 @@ inline void fast (zx_machine_set_7ffd_out)(uint8_t val)// переключени
 
 
 	return; // выход нафиг	
-	case QUORUM128/* nova 256 */:
-	   zx_RAM_bank_active  = (val&0b00000111); // d0 d1 d2 7ffd
+	case QUORUM128:
+	   //zx_RAM_bank_active  = (val&0b00000111); //128K only
+       // linear bank numbering, bits 5 7 6 3 2 1
+	   zx_RAM_bank_active  = (val & 0b00100111) | ((val >> 3) & 0b00011000); //1024k
+
         //if (val& 0x20) zx_state_48k_MODE_BLOCK=true; // 5bit = 1 48k mode block
         zx_state_48k_MODE_BLOCK = false;
         //        76543210  5 bit
-        zx_RAM_bank_7ffd = (val&0b00000111) ; // d0 d1 d2  7ffd
-	   zx_cpu_ram[3]=zx_ram_bank[zx_RAM_bank_7ffd];
+        zx_RAM_bank_7ffd = (val&0b00000111) ; // 
+       
+       #if RP2350_256K
+        
+	   zx_cpu_ram[3]=zx_ram_bank[zx_RAM_bank_active & 0x07];
 	
 	   if (val&8) zx_video_ram=zx_ram_bank[7];   else zx_video_ram=zx_ram_bank[5];	
        rom_select(); // переключение ПЗУ по портам и по сигналу DOS
