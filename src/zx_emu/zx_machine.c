@@ -29,7 +29,8 @@
 #include "rom/rom48Q_nova.h"// 48 kb   quorum
 #include "rom/rom128Q_nova.h"// 128 kb quorum
 
-#include "rom/QU7V45T5.h" // original Quorum 256-Quorum1024 rom
+//#include "rom/QU7V45T5.h" // original Quorum 256-Quorum1024 rom
+#include "rom/QU7V42T5.h" // original Quorum 256-Quorum1024 rom
 
 
 //#include "rom/service.h"// сервис монитор пентагон 
