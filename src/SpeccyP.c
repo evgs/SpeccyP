@@ -2068,7 +2068,8 @@ void setup_zx(void)
 //---
         if (numsetup == M_RAM) {
             //todo get menu index
-            uint8_t x = MenuBox(90, 52, 17, 9, "Model & RAM", getZxMachineNames(), getZxMachineVariantCount(), 0 /*conf.mashine*/, 1);
+            int count = getZxMachineVariantCount();
+            uint8_t x = MenuBox(90, 52, 17, count, "Model & RAM", getZxMachineNames(), count, 0 /*conf.mashine*/, 1);
             if (x==0xff) continue;
             #ifdef NO_GMX
             if (x==0x05) continue;
