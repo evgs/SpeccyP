@@ -2840,12 +2840,12 @@ if (Z80_PC(z1->cpu) == 0x0556 || Z80_PC(z1->cpu) == 0x056a) TAP_Play();
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 		// tr-dos
 
-		if ((zx_1ffd_lastOut & 0x02)== 0x00) // 0000 00x0  0x02 если не теневик 
-      {
+//		if ((zx_1ffd_lastOut & 0x02)== 0x00) // 0000 00x0  0x02 если не теневик 
+//        {
 	
 		if (!trdos) // если еще не в trdos то вход
 		{
-			if (((Z80_PC(z1->cpu) & 0x3D00) == 0x3D00) && ((zx_7ffd_lastOut & 0x10) == 0x10) )// trdos работает с BASIC48 D4 = 1     
+			if ((Z80_PCH(z1->cpu) == 0x3D) && (rom == 1 ))// trdos работает с BASIC48 D4 = 1     
 			                                                                     
 			{
 			trdos = true;
@@ -2857,9 +2857,9 @@ if (Z80_PC(z1->cpu) == 0x0556 || Z80_PC(z1->cpu) == 0x056a) TAP_Play();
 			
 		}
 	  
-      }
+//      }
 	  
-		if ((Z80_PC(z1->cpu) > 0x3FFF) && (trdos))// выход из trdos если в RAM
+		if (trdos) if ((Z80_PCH(z1->cpu) & 0xc0))// выход из trdos если в RAM
 		{
 		 trdos = false;
          rom_select(); // переключение ПЗУ по портам  
