@@ -405,6 +405,32 @@ inline static void fast(write_z80_256_n)(Machine *self, uint16_t addr, uint8_t v
 	zx_cpu_ram[x][addr & 0x3fff] = val;	
 }
 #endif  // 
+
+#ifdef MURM1
+// чтение из памяти Quorum (PSRAM MURM1)
+inline static uint8_t fast(read_z80_q)(Machine *self, uint16_t addr)
+{
+    const uint16_t masked_addr = addr & 0x3fff;  // Предвычисление маскированного адреса
+    uint8_t x = (addr >> 14);
+    // Обработка первого сегмента (0x0000-0x3fff)
+    if(x == 0) 
+    {
+        uint8_t ram0 = zx_0000_lastOut & 0b1001;
+        switch (ram0) {
+        case 0b0001: return zx_ram_bank[0][masked_addr]; break;
+        case 0b1001: return read8psram((uint32_t)(8 << 14) | masked_addr); break;
+        default: return zx_cpu_ram[0][masked_addr]; break;
+        }
+    }
+    // Обработка верхнего сегмента (0xc000-0xffff)   
+    if(x == 3) 
+    {
+    	//	 write_z80_qif (zx_RAM_bank_active > 7)// 0b 1111 1000
+		if (zx_RAM_bank_active & 0xf8)  return read8psram((uint32_t)(zx_RAM_bank_active << 14) | masked_addr); 
+    }  
+    // Общий случай для x=1,2 и x=3 с обычной RAM
+	return zx_cpu_ram[x][masked_addr];
+}
 //######################################################################################
 //PSRAM_BOARD // для расширенной памяти на rp2040 и rp2350 с PSRAM на плате MURM1
 #ifdef MURM1
@@ -596,6 +622,30 @@ inline static uint8_t fast(_read_z80_ext)(Machine *self, uint16_t addr)
     // Общий случай для x=1,2 и x=3 с обычной RAM
 	return zx_cpu_ram[x][masked_addr];
 }
+
+// чтение из памяти Quorum
+inline static uint8_t fast(_read_z80_q)(Machine *self, uint16_t addr)
+{
+    const uint16_t masked_addr = addr & 0x3fff;  // Предвычисление маскированного адреса
+    uint8_t x = (addr >> 14);
+    // Обработка первого сегмента (0x0000-0x3fff)
+    if(x == 0) 
+    {
+        uint8_t ram0 = zx_0000_lastOut & 0b1001;
+        switch (ram0) {
+        case 0b0001: return zx_ram_bank[0][masked_addr]; break;
+        case 0b1001: return PSRAM_DATA[(8 << 14) | masked_addr]; break;
+        default: return zx_cpu_ram[0][masked_addr]; break;
+        }
+    }
+    // Обработка верхнего сегмента (0xc000-0xffff)   
+    if(x == 3) {
+		if (zx_RAM_bank_active & 0xf8) return PSRAM_DATA[(zx_RAM_bank_active << 14) | masked_addr];
+    }  
+    // Общий случай для x=1,2 и x=3 с обычной RAM
+	return zx_cpu_ram[x][masked_addr];
+}
+
 //---------------------------------------------------------------------------------------------------------------
 // запись в память
 inline static void fast(_write_z80_ext)(Machine *self, uint16_t addr, uint8_t val)
@@ -2282,19 +2332,19 @@ void machine_NOVA_128(Machine *self) {
     self->cpu.context      = self;
     #ifdef MURM1
     if (psram_type) {
-        self->cpu.fetch_opcode = (Z80Read )read_z80_ext;
-        self->cpu.fetch        = (Z80Read )read_z80_ext;
-        self->cpu.nop          = (Z80Read )read_z80_ext;
-        self->cpu.read         = (Z80Read )read_z80_ext;
+        self->cpu.fetch_opcode = (Z80Read )read_z80_q;
+        self->cpu.fetch        = (Z80Read )read_z80_q;
+        self->cpu.nop          = (Z80Read )read_z80_q;
+        self->cpu.read         = (Z80Read )read_z80_q;
         self->cpu.write        = (Z80Write)write_z80_ext;
     }
     else
     #endif
     {
-        self->cpu.fetch_opcode = (Z80Read )_read_z80_ext;
-        self->cpu.fetch        = (Z80Read )_read_z80_ext;
-        self->cpu.nop          = (Z80Read )_read_z80_ext;
-        self->cpu.read         = (Z80Read )_read_z80_ext;
+        self->cpu.fetch_opcode = (Z80Read )_read_z80_q;
+        self->cpu.fetch        = (Z80Read )_read_z80_q;
+        self->cpu.nop          = (Z80Read )_read_z80_q;
+        self->cpu.read         = (Z80Read )_read_z80_q;
         self->cpu.write        = (Z80Write)_write_z80_ext;
     }
     self->cpu.in           = (Z80Read )in_z80quorum;
