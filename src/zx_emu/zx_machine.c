@@ -288,6 +288,10 @@ case QUORUM128:
 	//	rom_n =  ((zx_7ffd_lastOut & 0x10)>>4) | ((zx_0000_lastOut & 0x20)>>5) ;// 0001.0000 0000.1000 0000.0100 0000.0010 0000.0001
 	//	zx_cpu_ram[0] =  zx_rom_bank[ table_nova256 [rom_n] ];
 
+    if ((zx_0000_lastOut & 0b00000001)) {
+        //enable ram page
+        zx_cpu_ram[0] = zx_rom_bank[3]; // STUB
+    } else 
     if ((zx_0000_lastOut & 0b00100000) == 0) {
 	    rom=3;
         zx_cpu_ram[0] = zx_rom_bank[3]; 
@@ -431,6 +435,34 @@ inline static uint8_t fast(read_z80_q)(Machine *self, uint16_t addr)
     // Общий случай для x=1,2 и x=3 с обычной RAM
 	return zx_cpu_ram[x][masked_addr];
 }
+//##########################################################################################
+// запись в память Quorum
+inline static void fast(write_z80_q)(Machine *self, uint16_t addr, uint8_t val)
+{
+    const uint16_t masked_addr = addr & 0x3fff;  // Предвычисление маскированного адреса
+	uint8_t x = (addr >> 14);
+    // Обработка первого сегмента (0x0000-0x3fff)
+    if(x == 0) 
+    {
+        uint8_t ram0 = zx_0000_lastOut & 0b1001;
+        switch (ram0) {
+        case 0b0001: zx_ram_bank[0][masked_addr] = val; return; break;
+        case 0b1001: write8psram((uint32_t)(8 << 14) | (masked_addr), val); return; break;
+        default: return; //TODO write shadowed page
+        }
+    }
+  
+    if(x == 3) {
+        if (zx_RAM_bank_active & 0xf8) {
+            write8psram((uint32_t)(zx_RAM_bank_active << 14) | (masked_addr), val);
+            return;
+        }
+    }  
+    // Общий случай для x=1,2 и x=3 с обычной RAM
+	zx_cpu_ram[x][masked_addr] = val;
+}
+#endif
+
 //######################################################################################
 //PSRAM_BOARD // для расширенной памяти на rp2040 и rp2350 с PSRAM на плате MURM1
 #ifdef MURM1
@@ -645,6 +677,33 @@ inline static uint8_t fast(_read_z80_q)(Machine *self, uint16_t addr)
     // Общий случай для x=1,2 и x=3 с обычной RAM
 	return zx_cpu_ram[x][masked_addr];
 }
+// запись в память Quorum
+inline static void fast(_write_z80_q)(Machine *self, uint16_t addr, uint8_t val)
+{
+    const uint16_t masked_addr = addr & 0x3fff;  // Предвычисление маскированного адреса
+	uint8_t x = (addr >> 14);
+    // Обработка первого сегмента (0x0000-0x3fff)
+    if(x == 0) 
+    {
+        uint8_t ram0 = zx_0000_lastOut & 0b1001;
+        switch (ram0) {
+        case 0b0001: zx_ram_bank[0][masked_addr] = val; return; break;
+        case 0b1001: PSRAM_DATA[(8 << 14) | masked_addr] = val; return; break;
+        default: return; break;
+        }
+    }
+  
+    if(x == 3) 
+    {
+        if (zx_RAM_bank_active & 0xf8) // >7
+        {
+            PSRAM_DATA[(zx_RAM_bank_active << 14) | masked_addr]=val;
+            return;
+        }
+    }  
+    // Общий случай для x=1,2 и x=3 с обычной RAM
+	zx_cpu_ram[x][masked_addr] = val;
+}
 
 //---------------------------------------------------------------------------------------------------------------
 // запись в память
@@ -670,6 +729,7 @@ inline static void fast(_write_z80_ext)(Machine *self, uint16_t addr, uint8_t va
     // Общий случай для x=1,2 и x=3 с обычной RAM
 	zx_cpu_ram[x][masked_addr] = val;
 }
+
 //#############################################################################################
 // управление 512 банками памяти 8 Мегабайт
 // чтение из памяти 8Mb
@@ -2336,7 +2396,7 @@ void machine_NOVA_128(Machine *self) {
         self->cpu.fetch        = (Z80Read )read_z80_q;
         self->cpu.nop          = (Z80Read )read_z80_q;
         self->cpu.read         = (Z80Read )read_z80_q;
-        self->cpu.write        = (Z80Write)write_z80_ext;
+        self->cpu.write        = (Z80Write)write_z80_q;
     }
     else
     #endif
@@ -2345,7 +2405,7 @@ void machine_NOVA_128(Machine *self) {
         self->cpu.fetch        = (Z80Read )_read_z80_q;
         self->cpu.nop          = (Z80Read )_read_z80_q;
         self->cpu.read         = (Z80Read )_read_z80_q;
-        self->cpu.write        = (Z80Write)_write_z80_ext;
+        self->cpu.write        = (Z80Write)_write_z80_q;
     }
     self->cpu.in           = (Z80Read )in_z80quorum;
     self->cpu.out          = (Z80Write)out_z80quorum;
@@ -2897,6 +2957,7 @@ if (Z80_PC(z1->cpu) == 0x0556 || Z80_PC(z1->cpu) == 0x056a) TAP_Play();
 		if (!trdos) // если еще не в trdos то вход
 		{
 			if ((Z80_PCH(z1->cpu) == 0x3D) && (rom == 1 ))// trdos работает с BASIC48 D4 = 1     
+			//if ((Z80_PCH(z1->cpu) == 0x3D) && (rom != 3 ))// trdos работает с BASIC48 D4 = 1     
 			                                                                     
 			{
 			trdos = true;
