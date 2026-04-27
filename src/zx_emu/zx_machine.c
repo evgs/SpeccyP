@@ -1120,9 +1120,11 @@ inline void fast (zx_machine_set_7ffd_out)(uint8_t val)// переключени
         //        76543210  5 bit
         zx_RAM_bank_7ffd = (val&0b00000111) ; // 
        
-       #if RP2350_256K
-        
+       #if RP2350_256K 
+	   zx_cpu_ram[3]=zx_ram_bank[zx_RAM_bank_active & 0x0f];
+       #else
 	   zx_cpu_ram[3]=zx_ram_bank[zx_RAM_bank_active & 0x07];
+       #endif
 	
 	   if (val&8) zx_video_ram=zx_ram_bank[7];   else zx_video_ram=zx_ram_bank[5];	
        rom_select(); // переключение ПЗУ по портам и по сигналу DOS
