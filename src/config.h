@@ -117,7 +117,7 @@ enum {
     NOVA256 = 6,
     PENT8M = 7,
     PENT_512CASH = 8,
-    QUORUM128 = 9,
+    QUORUM1024 = 9,
 };
 
 //

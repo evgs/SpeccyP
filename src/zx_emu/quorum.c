@@ -305,7 +305,7 @@ inline static void fast(out_z80quorum)(Machine *self, uint16_t port16, uint8_t v
 // end Quorum_1024
 
 
-void machine_NOVA_128(Machine *self) {
+void machine_Quorum1024(Machine *self) {
     self->cpu.context      = self;
     #ifdef MURM1
     if (psram_type) {
@@ -337,6 +337,6 @@ void machine_NOVA_128(Machine *self) {
     self->cpu.hook         = Z_NULL;
     self->cpu.illegal      = Z_NULL;
     
-    pent_config = QUORUM128;
+    pent_config = QUORUM1024;
     ticks_per_frame=71680 ;// 71680- Пентагон //70908 - 128 +2A // 70784 Scorpion
 }
