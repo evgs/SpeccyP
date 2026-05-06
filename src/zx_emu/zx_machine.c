@@ -284,7 +284,7 @@ if ((zx_0000_lastOut&0b00100000) == 0)
 	return;
 	break;
 
-case QUORUM128:
+case QUORUM1024:
 	//	rom_n =  ((zx_7ffd_lastOut & 0x10)>>4) | ((zx_0000_lastOut & 0x20)>>5) ;// 0001.0000 0000.1000 0000.0100 0000.0010 0000.0001
 	//	zx_cpu_ram[0] =  zx_rom_bank[ table_nova256 [rom_n] ];
 
@@ -1221,7 +1221,7 @@ inline void fast (zx_machine_set_7ffd_out)(uint8_t val)// переключени
 
 
 	return; // выход нафиг	
-	case QUORUM128:
+	case QUORUM1024:
 	   //zx_RAM_bank_active  = (val&0b00000111); //128K only
        // linear bank numbering, bits 5 7 6 3 2 1
 	   zx_RAM_bank_active  = (val & 0b00100111) | ((val >> 3) & 0b00011000); //1024k
@@ -2388,7 +2388,7 @@ void machine_NOVA_256(Machine *self)
         }
 #endif 
 
-void machine_NOVA_128(Machine *self) {
+void machine_Quorum1024(Machine *self) {
     self->cpu.context      = self;
     #ifdef MURM1
     if (psram_type) {
@@ -2420,7 +2420,7 @@ void machine_NOVA_128(Machine *self) {
     self->cpu.hook         = Z_NULL;
     self->cpu.illegal      = Z_NULL;
     
-    pent_config = QUORUM128;
+    pent_config = QUORUM1024;
     ticks_per_frame=71680 ;// 71680- Пентагон //70908 - 128 +2A // 70784 Scorpion
     }
 
@@ -2535,7 +2535,7 @@ void init_rom_ram(uint8_t rom_x)
 
 break;
 
-case QUORUM128:
+case QUORUM1024:
 	    // zx_rom_bank[0]=&ROM_128QNova[0];//128k 
 	    // zx_rom_bank[1]=&ROM_48QNova[0*16384];//48k 
 		// zx_rom_bank[2]=&ROM_QtrNova[0*16384];//TRDOS 6.04
@@ -3312,8 +3312,8 @@ void init_mashine_and_extram(uint8_t config_mashine) // инициализаци
           machine_NOVA_256(z1);
 		break; //
     
-    case QUORUM128:
-        machine_NOVA_128(z1);
+    case QUORUM1024:
+        machine_Quorum1024(z1);
         break;
 
 	case PENT8M:
