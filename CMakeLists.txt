@@ -18,7 +18,7 @@ find_package(Git REQUIRED)
 
 # Execute git describe
 execute_process(
-    COMMAND ${GIT_EXECUTABLE} describe --tags --always --dirty
+    COMMAND ${GIT_EXECUTABLE} describe --tags --abbrev=6 --always --dirty=~
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     OUTPUT_VARIABLE GIT_VERSION
     OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -27,7 +27,7 @@ execute_process(
 # Устанавливаем параметры платы и чипа и так далее
 set(PICO_BOARD pico2 CACHE STRING "Board type")
 
-set(DEBUG ON)
+set(DEBUG OFF)
 
 # == Конфигурация  SpeccyP ==
 set (BASE_VERSION "1.6.1 ${GIT_VERSION}")
