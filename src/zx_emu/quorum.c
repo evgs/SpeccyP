@@ -1,6 +1,7 @@
 #include "zx_machine.h"
 #include "config.h"
 #include "../aySoft.h"
+#include "wd1793.h"
 
 #include "quorum.h"
 
@@ -28,7 +29,7 @@ extern uint8_t zx_keyboardDecode(uint8_t addrH);
 extern uint8_t port_atr(void);
 extern ZX_Input_t zx_input;
 extern void trdos_out(uint8_t port, uint8_t val);
-
+extern uint8_t wd1793_PortFF;
 
 #ifdef MURM1
 #include "psram_spi.h"
@@ -194,12 +195,15 @@ inline static uint8_t fast(in_z80quorum)(Machine *self, uint16_t port16) {
         //((port == 0x7F) || (port == 0x5F) || (port == 0x3F) || (port == 0x1F))
         if ((portL & 0x7F) == portL) return WD1793_Read((portL>>5) & 0b11); // Read from 0x7F to 0x1F port
             
-        #if defined RTC_SMUC  // теневой порт
-        if (port16  ==  0xDFBA) { return in_GSP(RTC_READ_IN_DFBA);}//чтение порта часов
-        if (port16  == 0x5FBA) return 0b01101000;//SMUK_VER;
-        #endif
         return 0xFF;  
 	} // end tr-dos
+
+    if (portL & 0xF0 == 0x80) {
+        // TR-DOS or CPM?
+        if ((zx_0000_lastOut & 0x80) == 0) {
+            if (portL & 0x4 == 0) return WD1793_Read(portL & 0b11);
+        } 
+    }
 
 	if (portL & 1<<0)
 	{
@@ -220,7 +224,12 @@ inline static uint8_t fast(in_z80quorum)(Machine *self, uint16_t port16) {
 	else    //PORTL = 0bxxxxxx0
     {   
         // 0xXX7e - extended keyboard
-        if (portL == 0x7e) return 0xff; //TODO
+        if (portL == 0x7e) {
+            uint8_t value = 0x3f; //TODO keys
+            if (zx_7ffd_lastOut & (1<<3)) value |= 0x80;    // screen bit readout
+            if (zx_0000_lastOut & (1<<3)) value |= 0x60;    // RAM_8 bit readout
+            return value; 
+        }
 		//загрузка с магнитофона и опрос клавиатуры
 		if (hw_zx_get_bit_LOAD())  return zx_keyboardDecode(portH);
 		else return(zx_keyboardDecode(portH) & 0b10111111);	
@@ -251,25 +260,37 @@ inline static void fast(out_z80quorum)(Machine *self, uint16_t port16, uint8_t v
 
 	if (trdos) {trdos_out(portL,val); return;}// если это tr-dos
 
-		#ifdef GENERAL_SOUND   
-        if (portL == 0xB3) {out_GSP(GS_WRITE_OUT_B3,  val);   return;}// передача данных в GS
-        if (portL == 0xBB) {out_GSP(GS_COMMAND_OUT_BB,val);   return;}// передача команды в GS
-        #else
-		//SAA1099
-		if(port16 == 0x01FF){saa1099_write(1,val);return;}					
-		if(port16 == 0x00FF){saa1099_write(0,val);return;}
-        #endif
-        #ifdef Z_CONTROLER 
-        if (portL == 0x57) {out_GSP(ZC_WRITE_OUT_57,  val); return;}// передача данных в SD карту
-        if (portL == 0x77) {out_GSP(ZC_WRITE_OUT_77,val);z_controler_cs = val; return;}//управление SD   SD_SPI_CS0_PIN val&0x02
-        #endif
-        #ifdef  RTC_NOVA
-     case QUORUM128:   if (portL  ==  0x88 ) {out_GSP(RTC_WRITE_OUT_88,  val); return;}//номер регистра часов
-        if (portL  ==  0x89 ) {out_GSP(RTC_WRITE_OUT_89,  val); return;}//данные регистра часов
-        #endif
+    #ifdef GENERAL_SOUND   
+    if (portL == 0xB3) {out_GSP(GS_WRITE_OUT_B3,  val);   return;}// передача данных в GS
+    if (portL == 0xBB) {out_GSP(GS_COMMAND_OUT_BB,val);   return;}// передача команды в GS
+    #else
+    //SAA1099
+    if(port16 == 0x01FF){saa1099_write(1,val);return;}					
+    if(port16 == 0x00FF){saa1099_write(0,val);return;}
+    #endif
+    #ifdef Z_CONTROLER 
+    if (portL == 0x57) {out_GSP(ZC_WRITE_OUT_57,  val); return;}// передача данных в SD карту
+    if (portL == 0x77) {out_GSP(ZC_WRITE_OUT_77,val);z_controler_cs = val; return;}//управление SD   SD_SPI_CS0_PIN val&0x02
+    #endif
 
-
-
+    if (portL & 0xF0 == 0x80) {
+        // TR-DOS or CPM?
+        if ((zx_0000_lastOut & 0x80) == 0) {
+            if (portL & 0x4 == 0) { WD1793_Write(portL & 0b11, val); return; }
+            if (portL == 0x85) {
+                uint8_t pff = 0b0100;
+                switch (val & QCPM85_DRVMASK) {
+                    case QCPM85_DRVA: pff |= 0b00; break; //drive A
+                    case QCPM85_DRVB: pff |= 0b01; break; //drive B
+                    default: pff |= 0x00; break; // fallback to A
+                }
+                if (val & QCPM85_MOTOR) pff |= 1<<3;  //Head load
+                if (val & QCPM85_SIDE) pff |= 1<<4; //Side
+                wd1793_PortFF = val;
+                return;
+            }
+        } 
+    }
 
 	if (port16 & 1) // 
 	{
