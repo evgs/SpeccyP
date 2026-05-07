@@ -145,6 +145,36 @@ bool OpenTRDFile(char *sn, uint8_t drv)
 }
 
 //-----------------------------------------------------------------------------
+// Открытие CPM файла
+//-----------------------------------------------------------------------------
+bool OpenCPMFile(char *sn, uint8_t drv)
+{   
+    // Сброс кеша загруженной дорожки
+    last_track = 0xff;
+    last_side  = 0xff;
+
+    // Установка геометрии диска по умолчанию (стандартный TR-DOS)
+    fdd.sector_size = 1024;
+    fdd.data_offset = 0;
+    fdd.sectors_per_track = 5;
+    fdd.cylinders = 80;
+    fdd.heads = 2;
+
+    // Сохранение имени файла в конфигурации
+    strcpy(conf.Disks[drv & 0x03], sn);
+    strncpy(dir_patch_info, conf.Disks[drv & 0x03], (DIRS_DEPTH*(LENF+16)) );
+
+    // Открытие файла
+    f_open(&fileTRD, sn, FA_READ);   
+
+    // Сброс состояния привода
+    DRV = 5;
+    NewDrive = drv;
+    NoDisk = 0;
+    return true;
+}
+
+//-----------------------------------------------------------------------------
 // Контекст и интерфейс для работы с FDI Stream
 //-----------------------------------------------------------------------------
 static fdi_stream_ctx_t fdi_ctx;
@@ -317,6 +347,7 @@ uint32_t ComputeDiskPosition(uint8_t Sector, uint8_t Track, uint8_t Side)
     {
         case SCL:
             return (((uint16_t)Track * fdd.heads + (uint16_t)Side) * fdd.sectors_per_track + (uint16_t)Sector);
+        case CP_M:
         case TRD:
         case TRDS:
             return (((uint16_t)Track * fdd.heads + (uint16_t)Side) * fdd.sectors_per_track + (uint16_t)Sector);
@@ -667,6 +698,7 @@ void WD1793_CmdReadingSector()
             return;
         case TRD:
         case TRDS:
+        case CP_M:
             WD1793_CmdReadingSectorTRD();
             return; // !!! В оригинале тут нет return и break, но так безопаснее
         case FDI:
@@ -1019,6 +1051,7 @@ void WD1793_Cmd_ReadSector()
             CmdType = 2;
             return;
 
+        case CP_M:
         case TRD:
         case TRDS:
             WD1793.Multiple = WD1793.CommandRegister & 0x10;

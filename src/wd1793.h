@@ -143,6 +143,8 @@ void WD1793_Write(uint8_t Address, uint8_t Value);
 bool OpenTRDFile(char* sn, uint8_t drv);
 bool OpenFDI_File(char *sn, uint8_t drv);
 
+bool OpenCPMFile(char *sn, uint8_t drv);
+
 void SCL_read_sector(void);
 
 #endif // _WD1793_H_

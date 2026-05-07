@@ -86,6 +86,7 @@ uint8_t vout_select;
 void file_manager (void);   
 void file_info (void);   
 void file_select_trdos(void);
+void file_select_cpm(void);
 void setup_zx(void);
 //bool save_config(void);
 void  config_init(void);
@@ -1682,6 +1683,34 @@ is_new_screen = true;
 
 }
 ////// TRDOS end
+void file_select_cpm(void) // 
+{
+	is_menu_mode = true;
+	
+    is_new_screen = true;
+	//     MenuTRDOS(); // меню выбора и подключения образов trd
+	uint8_t Drive = MenuBox_trd(64, 54, 22, 7, "Drive CP/M", 4, 0, 1);
+	if (Drive < 5)
+	{
+		// Копируем строку длиною не более 10 символов из массива src в массив dst1.
+		// strncpy (dst1, src,3);
+        strncpy(conf.DiskName[Drive], files[cur_file_index], LENF);
+
+        conf.FileAutorunType=NONE;
+        file_type[Drive] = CP_M;
+        OpenCPMFile(conf.activefilename,Drive);
+
+        write_protected = false; // защита записи отключена для TRD
+	}
+
+	draw_main_window(); // восстановление текста
+	draw_file_window();
+
+    g_delay_ms(200);
+	last_action = time_us_32();
+
+
+}
 //++++++++++++++++++++++++++++++++++++++++++
 //================================================================
 void  config_init(void)
@@ -3231,6 +3260,13 @@ void file_manager (void)
                                 file_select_trdos();
                                 return; // continue;
                             }
+
+                            if (strcasecmp(ext, "cpm") == 0)
+                            {
+                                file_select_cpm();
+                                return; // continue;
+                            }
+
                             // SCL обработка
 
                             if (strcasecmp(ext, "scl") == 0)
