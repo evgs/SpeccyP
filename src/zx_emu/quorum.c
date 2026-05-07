@@ -28,7 +28,7 @@ extern volatile uint8_t * PSRAM_DATA ;
 extern uint8_t zx_keyboardDecode(uint8_t addrH);
 extern uint8_t port_atr(void);
 extern ZX_Input_t zx_input;
-extern void trdos_out(uint8_t port, uint8_t val);
+void trdos_out(uint8_t port, uint8_t val);
 extern uint8_t wd1793_PortFF;
 
 #ifdef MURM1
@@ -198,10 +198,21 @@ inline static uint8_t fast(in_z80quorum)(Machine *self, uint16_t port16) {
         return 0xFF;  
 	} // end tr-dos
 
-    if (portL & 0xF0 == 0x80) {
+    if ((portL & 0xF0) == 0x80) {
         // TR-DOS or CPM?
         if ((zx_0000_lastOut & 0x80) == 0) {
-            if (portL & 0x4 == 0) return WD1793_Read(portL & 0b11);
+            switch (portL) {
+                case 0x80:
+                    return (WD1793_Read(0) & 0x7f) | ((wd1793_PortFF & (1<<3))  ? 0x00 : 0x80);
+                case 0x81:
+                case 0x82:
+                case 0x83: return WD1793_Read(portL & 0b11);
+                default: return 0xff; //0x84, 0x85;
+            }
+            if (portL & 0x4) 
+                return 0xff; //0x84, 0x85
+            else 
+                return WD1793_Read(portL & 0b11);
         } 
     }
 
@@ -210,7 +221,7 @@ inline static uint8_t fast(in_z80quorum)(Machine *self, uint16_t port16) {
 		// МЫШЬ
         if (port16 == 0xfadf) return mouse[1]; //#FADF - поpт  кнопок
         if (port16 == 0xfbdf) return mouse[2]; //#FBDF - поpт X-кооpдинаты;
-        if (port16 == 0xffdf) return mouse[3]; //#FFDF - поpт У-кооpдинаты.
+        if (port16 == 0xffdf) return mouse[3]; //#FFDFportL & 0b11 - поpт У-кооpдинаты.
 
         //Kempston джойстик    
         if (portL==0x1f) return (zx_input.kempston | joy_k);
@@ -273,10 +284,10 @@ inline static void fast(out_z80quorum)(Machine *self, uint16_t port16, uint8_t v
     if (portL == 0x77) {out_GSP(ZC_WRITE_OUT_77,val);z_controler_cs = val; return;}//управление SD   SD_SPI_CS0_PIN val&0x02
     #endif
 
-    if (portL & 0xF0 == 0x80) {
+    if ((portL & 0xF0) == 0x80) {
         // TR-DOS or CPM?
         if ((zx_0000_lastOut & 0x80) == 0) {
-            if (portL & 0x4 == 0) { WD1793_Write(portL & 0b11, val); return; }
+            if (portL < 0x84) { WD1793_Write(portL & 0b11, val); return; }
             if (portL == 0x85) {
                 uint8_t pff = 0b0100;
                 switch (val & QCPM85_DRVMASK) {
@@ -286,7 +297,7 @@ inline static void fast(out_z80quorum)(Machine *self, uint16_t port16, uint8_t v
                 }
                 if (val & QCPM85_MOTOR) pff |= 1<<3;  //Head load
                 if (val & QCPM85_SIDE) pff |= 1<<4; //Side
-                wd1793_PortFF = val;
+                wd1793_PortFF = pff;
                 return;
             }
         } 
