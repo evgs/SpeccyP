@@ -407,8 +407,6 @@ inline static void fast(write_z80_256_n)(Machine *self, uint16_t addr, uint8_t v
 	zx_cpu_ram[x][addr & 0x3fff] = val;	
 }
 #endif  // 
-
-
 //######################################################################################
 //PSRAM_BOARD // для расширенной памяти на rp2040 и rp2350 с PSRAM на плате MURM1
 #ifdef MURM1
@@ -600,7 +598,6 @@ inline static uint8_t fast(_read_z80_ext)(Machine *self, uint16_t addr)
     // Общий случай для x=1,2 и x=3 с обычной RAM
 	return zx_cpu_ram[x][masked_addr];
 }
-
 //---------------------------------------------------------------------------------------------------------------
 // запись в память
 inline static void fast(_write_z80_ext)(Machine *self, uint16_t addr, uint8_t val)
@@ -625,7 +622,6 @@ inline static void fast(_write_z80_ext)(Machine *self, uint16_t addr, uint8_t va
     // Общий случай для x=1,2 и x=3 с обычной RAM
 	zx_cpu_ram[x][masked_addr] = val;
 }
-
 //#############################################################################################
 // управление 512 банками памяти 8 Мегабайт
 // чтение из памяти 8Mb
@@ -1706,7 +1702,6 @@ inline static void fast(nova_256)(Machine *self, uint16_t port16, uint8_t val)
 	
 }
 // end nova_256
-
 //##############################################################################
 //### Настройки и функции для эмулятора Z80 REDCODE Manuel Sainz 
 
@@ -2142,8 +2137,6 @@ void machine_NOVA_256(Machine *self)
 		ticks_per_frame=71680 ;// 71680- Пентагон //70908 - 128 +2A // 70784 Scorpion
         }
 #endif 
-
-
 // MurmoZavr 8Mb      
 void machine_MurmoZavr(Machine *self)
         {
