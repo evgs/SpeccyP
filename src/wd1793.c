@@ -707,7 +707,8 @@ void WD1793_CmdWritingSector()
     else if (file_type[DRV] == FDI) {
         msg_code = 10;  // FDI Read Only
     }
-    else if ((file_attr[DRV] & AM_RDO) == AM_RDO) {
+
+    if ((file_attr[DRV] & AM_RDO) == AM_RDO) {
         msg_code = 10;  // This file is Read Only
     }
 
