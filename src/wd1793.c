@@ -363,7 +363,7 @@ void SetDiskPosition(uint16_t pos)
 {
     if (file_type[0] == FDI) return;
 
-    f_lseek(&fileTRD, (uint32_t)pos << 8);
+    f_lseek(&fileTRD, (uint32_t)pos * fdd.sector_size);
     res = f_read(&fileTRD, DiskBuf, fdd.sector_size, &br);
     if (res != 0)
         printError("Reading error: ", res);
