@@ -1030,6 +1030,10 @@ void WD1793_CmdStartReadingSector()
     // Установка сообщения в статус баре
     // msg_bar = 16; // READ TR:
     // wait_msg = 3000; 
+
+    //pseudo-search sector
+    if(!HasTimePeriodExpired(10000)) return; // Задержка 32us
+
     CurrentCommand = WD1793_CmdReadingSector;
 }
 
