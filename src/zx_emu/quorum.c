@@ -296,7 +296,7 @@ inline static void fast(out_z80quorum)(Machine *self, uint16_t port16, uint8_t v
                     default: pff |= 0x00; break; // fallback to A
                 }
                 if (val & QCPM85_MOTOR) pff |= 1<<3;  //Head load
-                if (val & QCPM85_SIDE) pff |= 1<<4; //Side
+                if ((val & QCPM85_SIDE) == 0) pff |= 1<<4; //Side (inverted)
                 wd1793_PortFF = pff;
                 return;
             }
