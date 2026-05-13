@@ -20,6 +20,7 @@ mouse[3] мышь Y
 
 #include "xinput_host.h"
 
+#include <assert.h>
 // usb устройства
 //uint8_t usb_device;// 1 клавиатура 2 мышь 3 клавиатура+мышь
 
@@ -382,6 +383,8 @@ const /*static*/ __in_flash() uint8_t usbScanMap[] = {
 
 };
 #define usbScanMapSize (sizeof(usbScanMap)/sizeof(uint8_t))
+static_assert(usbScanMapSize == 0x66, "Wrong array size!");
+
 
 void scancode_usb(uint8_t code){
     if (code == 0) return;

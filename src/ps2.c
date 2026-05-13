@@ -15,7 +15,7 @@
 #include "hardware/irq.h"
 #include "usb_key.h"
 
-
+#include <assert.h>
 
 #define KBD_BUFFER_SIZE 45
 static volatile uint8_t kbd_buffer[KBD_BUFFER_SIZE];
@@ -91,154 +91,248 @@ void zx_kb_decode(uint8_t* zx_kb_state)
 	
 };
 
+#define BITINDEX(BINN, BITNUM) ((BINN)<<6 | (BITNUM))
+const __in_flash() uint8_t ps2Scans_NE0[] = {
+		/* 0x00: */ 0xff,
+		/* 0x01: */ BITINDEX(3, KB_U3_F9_POS),
+        /* 0x02: */ 0xff,
+		/* 0x03: */ BITINDEX(3, KB_U3_F5_POS),
+		/* 0x04: */ BITINDEX(3, KB_U3_F3_POS),
+		/* 0x05: */ BITINDEX(3, KB_U3_F1_POS),
+		/* 0x06: */ BITINDEX(3, KB_U3_F2_POS),
+		/* 0x07: */ BITINDEX(3, KB_U3_F12_POS),
+
+        /* 0x08: */ 0xff,
+        /* 0x09: */ BITINDEX(3, KB_U3_F10_POS),
+		/* 0x0A: */ BITINDEX(3, KB_U3_F8_POS),
+		/* 0x0B: */ BITINDEX(3, KB_U3_F6_POS),
+		/* 0x0C: */ BITINDEX(3, KB_U3_F4_POS),
+		/* 0x0D: */ BITINDEX(1, KB_U1_TAB_POS),
+		/* 0x0E: */ BITINDEX(1, KB_U1_TILDE_POS),
+        /* 0x0f: */ 0xff,
+
+        /* 0x10: */ 0xff,
+        /* 0x11: */ BITINDEX(1, KB_U1_L_ALT_POS),
+		/* 0x12: */ BITINDEX(1, KB_U1_L_SHIFT_POS),
+		/* 0x14: */ BITINDEX(1, KB_U1_L_CTRL_POS),
+        /* 0x15: */ BITINDEX(0, KB_U0_Q_POS),
+		/* 0x16: */ BITINDEX(1, KB_U1_1_POS),
+        /* 0x17: */ 0xff,
+
+        /* 0x18: */ 0xff,
+        /* 0x19: */ 0xff,
+        /* 0x1A: */ BITINDEX(0, KB_U0_Z_POS),
+		/* 0x1B: */ BITINDEX(0, KB_U0_S_POS),
+		/* 0x1C: */ BITINDEX(0, KB_U0_A_POS),
+		/* 0x1D: */ BITINDEX(0, KB_U0_W_POS),
+		/* 0x1E: */ BITINDEX(1, KB_U1_2_POS),
+        /* 0x1f: */ 0xff,
+
+        /* 0x20: */ 0xff,
+        /* 0x21: */ BITINDEX(0, KB_U0_C_POS),
+		/* 0x22: */ BITINDEX(0, KB_U0_X_POS),
+		/* 0x23: */ BITINDEX(0, KB_U0_D_POS),
+		/* 0x24: */ BITINDEX(0, KB_U0_E_POS),
+		/* 0x25: */ BITINDEX(1, KB_U1_4_POS),
+		/* 0x26: */ BITINDEX(1, KB_U1_3_POS),
+        /* 0x27: */ 0xff,
+
+        /* 0x28: */ 0xff,
+        /* 0x29: */ BITINDEX(1, KB_U1_SPACE_POS),
+		/* 0x2A: */ BITINDEX(0, KB_U0_V_POS),
+		/* 0x2B: */ BITINDEX(0, KB_U0_F_POS),
+		/* 0x2C: */ BITINDEX(0, KB_U0_T_POS),
+		/* 0x2D: */ BITINDEX(0, KB_U0_R_POS),
+		/* 0x2E: */ BITINDEX(1, KB_U1_5_POS),
+        /* 0x2f: */ 0xff,
+
+        /* 0x30: */ 0xff,
+        /* 0x31: */ BITINDEX(0, KB_U0_N_POS),
+        /* 0x32: */ BITINDEX(0, KB_U0_B_POS),
+		/* 0x33: */ BITINDEX(0, KB_U0_H_POS),
+		/* 0x34: */ BITINDEX(0, KB_U0_G_POS),
+		/* 0x35: */ BITINDEX(0, KB_U0_Y_POS),
+		/* 0x36: */ BITINDEX(1, KB_U1_6_POS),
+        /* 0x37: */ 0xff,
+
+        /* 0x38: */ 0xff,
+        /* 0x39: */ 0xff,
+        /* 0x3A: */ BITINDEX(0, KB_U0_M_POS),
+		/* 0x3B: */ BITINDEX(0, KB_U0_J_POS),
+		/* 0x3C: */ BITINDEX(0, KB_U0_U_POS),
+		/* 0x3D: */ BITINDEX(1, KB_U1_7_POS),
+		/* 0x3E: */ BITINDEX(1, KB_U1_8_POS),
+        /* 0x3f: */ 0xff,
+
+        /* 0x40: */ 0xff,
+        /* 0x41: */ BITINDEX(0, KB_U0_COMMA_POS),
+        /* 0x42: */ BITINDEX(0, KB_U0_K_POS),
+		/* 0x43: */ BITINDEX(0, KB_U0_I_POS),
+		/* 0x44: */ BITINDEX(0, KB_U0_O_POS),
+		/* 0x45: */ BITINDEX(1, KB_U1_0_POS),
+		/* 0x46: */ BITINDEX(1, KB_U1_9_POS),
+        /* 0x47: */ 0xff,
+
+        /* 0x48: */ 0xff,
+        /* 0x49: */ BITINDEX(0, KB_U0_PERIOD_POS),
+		/* 0x4A: */ BITINDEX(1, KB_U1_SLASH_POS),
+		/* 0x4B: */ BITINDEX(0, KB_U0_L_POS),
+		/* 0x4C: */ BITINDEX(0, KB_U0_SEMICOLON_POS),
+		/* 0x4D: */ BITINDEX(0, KB_U0_P_POS),
+		/* 0x4E: */ BITINDEX(1, KB_U1_MINUS_POS),
+        /* 0x4f: */ 0xff,
+
+        /* 0x50: */ 0xff,
+        /* 0x51: */ 0xff,
+        /* 0x52: */ BITINDEX(0, KB_U0_QUOTE_POS),
+        /* 0x53: */ 0xff,
+		/* 0x54: */ BITINDEX(0, KB_U0_LEFT_BR_POS),
+        /* 0x55: */ 0xff,
+        /* 0x56: */ 0xff,
+        /* 0x57: */ 0xff,
 
 
-void translate_scancode(uint8_t code,bool is_press, bool is_e0,bool is_e1)
+		/* 0x58: */ BITINDEX(1, KB_U1_CAPS_LOCK_POS),
+		/* 0x59: */ BITINDEX(1, KB_U1_R_SHIFT_POS),
+		/* 0x55: */ BITINDEX(1, KB_U1_EQUALS_POS),
+		/* 0x5A: */ BITINDEX(1, KB_U1_ENTER_POS),
+		/* 0x5B: */ BITINDEX(0, KB_U0_RIGHT_BR_POS),
+        /* 0x5c: */ 0xff,
+		/* 0x5D: */ BITINDEX(1, KB_U1_BACKSLASH_POS),
+        /* 0x5e: */ 0xff,
+        /* 0x5f: */ 0xff,
+
+        /* 0x60: */ 0xff,
+        /* 0x61: */ 0xff,
+        /* 0x62: */ 0xff,
+        /* 0x63: */ 0xff,
+        /* 0x64: */ 0xff,
+        /* 0x65: */ 0xff,
+		/* 0x66: */ BITINDEX(1, KB_U1_BACK_SPACE_POS),
+        /* 0x67: */ 0xff,
+
+        /* 0x68: */ 0xff,
+        /* 0x69: */ BITINDEX(2, KB_U2_NUM_1_POS),
+        /* 0x6a: */ 0xff,
+		/* 0x6B: */ BITINDEX(2, KB_U2_NUM_4_POS),
+		/* 0x6C: */ BITINDEX(2, KB_U2_NUM_7_POS),
+        /* 0x6d: */ 0xff,
+        /* 0x6e: */ 0xff,
+        /* 0x6f: */ 0xff,
+
+        /* 0x70: */ BITINDEX(2, KB_U2_NUM_0_POS),
+		/* 0x71: */ BITINDEX(2, KB_U2_NUM_PERIOD_POS),
+		/* 0x72: */ BITINDEX(2, KB_U2_NUM_2_POS),
+		/* 0x73: */ BITINDEX(2, KB_U2_NUM_5_POS),
+		/* 0x74: */ BITINDEX(2, KB_U2_NUM_6_POS),
+		/* 0x75: */ BITINDEX(2, KB_U2_NUM_8_POS),
+		/* 0x76: */ BITINDEX(1, KB_U1_ESC_POS),
+		/* 0x77: */ BITINDEX(2, KB_U2_NUM_LOCK_POS),
+
+        /* 0x78: */ BITINDEX(3, KB_U3_F11_POS),
+		/* 0x79: */ BITINDEX(2, KB_U2_NUM_PLUS_POS),
+		/* 0x7A: */ BITINDEX(2, KB_U2_NUM_3_POS),
+		/* 0x7B: */ BITINDEX(2, KB_U2_NUM_MINUS_POS),
+		/* 0x7C: */ BITINDEX(2, KB_U2_NUM_MULT_POS),
+		/* 0x7D: */ BITINDEX(2, KB_U2_NUM_9_POS),
+		/* 0x7E: */ BITINDEX(2, KB_U2_SCROLL_LOCK_POS),
+        /* 0x7f: */ 0xff,
+
+        /* 0x80: */ 0xff,
+        /* 0x81: */ 0xff,
+        /* 0x82: */ 0xff,
+		/* 0x83: */ BITINDEX(3, KB_U3_F7_POS),
+};
+#define ps2Scans_NE0_size (sizeof(ps2Scans_NE0)/sizeof(uint8_t))
+static_assert(ps2Scans_NE0_size == 0x84, "Wrong array size!");
+
+const __in_flash() uint8_t ps2Scans_E0[] = {
+        /* 0x00..0x07: (8)*/
+            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
+        /* 0x08..0x0f: (8)*/
+            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
+        /* 0x10: */ 0xff,
+        /* 0x11 */ BITINDEX(1, KB_U1_R_ALT_POS),
+        /* 0x12 */ BITINDEX(2, KB_U2_PRT_SCR_POS),
+        /* 0x13: */ 0xff,
+        /* 0x14 */ BITINDEX(1, KB_U1_R_CTRL_POS),
+        /* 0x15..0x17: (3)*/ 
+            0xff, 0xff, 0xff,
+        /* 0x18..0x1e: (7) */
+            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+        /* 0x1F */ BITINDEX(1, KB_U1_L_WIN_POS),
+        /* 0x20..0x26: (7) */
+            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+        /* 0x27 */ BITINDEX(1, KB_U1_R_WIN_POS),
+        /* 0x28..0x2e: (7) */
+            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+        /* 0x2F */ BITINDEX(1, KB_U1_MENU_POS),
+        /* 0x30..0x37: (8)*/
+            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
+        /* 0x38..0x3f: (8)*/
+            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
+        /* 0x40..0x47: (8)*/
+            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
+        /* 0x48: */ 0xff,
+        /* 0x49: */ 0xff,
+        /* 0x4A */ BITINDEX(2, KB_U2_NUM_SLASH_POS),
+        /* 0x4b..0x4f: (5)*/
+            0xff, 0xff, 0xff, 0xff, 0xff,  
+        /* 0x50..0x57: (8)*/
+            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
+        /* 0x58: */ 0xff,
+        /* 0x59: */ 0xff,
+        /* 0x5A */ BITINDEX(2, KB_U2_NUM_ENTER_POS),
+        /* 0x5b..0x5f: (5)*/
+            0xff, 0xff, 0xff, 0xff, 0xff,  
+        /* 0x60..0x67: (8)*/
+            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
+        /* 0x68: */ 0xff,
+        /* 0x69 */ BITINDEX(2, KB_U2_END_POS),
+        /* 0x6a: */ 0xff,
+        /* 0x6B */ BITINDEX(2, KB_U2_LEFT_POS),
+        /* 0x6C */ BITINDEX(2, KB_U2_HOME_POS),
+        /* 0x6d..0x6f: (3)*/
+            0xff, 0xff, 0xff,  
+        /* 0x70 */ BITINDEX(2, KB_U2_INSERT_POS),
+        /* 0x71 */ BITINDEX(2, KB_U2_DELETE_POS),
+        /* 0x72 */ BITINDEX(2, KB_U2_DOWN_POS),
+        /* 0x73: */ 0xff,
+        /* 0x74 */ BITINDEX(2, KB_U2_RIGHT_POS),
+        /* 0x75 */ BITINDEX(2, KB_U2_UP_POS),
+        /* 0x76..0x79: (4)*/
+            0xff, 0xff, 0xff, 0xff,  
+        /* 0x7A */ BITINDEX(2, KB_U2_PAGE_DOWN_POS),
+        /* 0x7b: */ 0xff,
+        /* 0x7c: */ 0xff,
+        /* 0x7D */ BITINDEX(2, KB_U2_PAGE_UP_POS),
+};
+#define ps2Scans_E0_size (sizeof(ps2Scans_E0)/sizeof(uint8_t))
+static_assert(ps2Scans_E0_size == 0x7e, "Wrong array size!");
+
+void translate_scancode(uint8_t code, bool is_press, bool is_e0, bool is_e1)
 {
-	if (is_e1){
-		if (code==0x14) {if (is_press) kb_st_ps2.u[2]|=KB_U2_PAUSE_BREAK; else kb_st_ps2.u[2]&=~KB_U2_PAUSE_BREAK;}
-		return;
+    uint8_t bi = 0xff;
+
+    if (is_e1){
+		if (code==0x14) { bi = BITINDEX(2, KB_U2_PAUSE_BREAK_POS); }
 	}
 	
-	if (!is_e0)
-	switch (code)
-	{
-		//0
-		case 0x1C: if (is_press) kb_st_ps2.u[0]|=KB_U0_A; else kb_st_ps2.u[0]&=~KB_U0_A; break;
-		case 0x32: if (is_press) kb_st_ps2.u[0]|=KB_U0_B; else kb_st_ps2.u[0]&=~KB_U0_B; break;
-		case 0x21: if (is_press) kb_st_ps2.u[0]|=KB_U0_C; else kb_st_ps2.u[0]&=~KB_U0_C; break;
-		case 0x23: if (is_press) kb_st_ps2.u[0]|=KB_U0_D; else kb_st_ps2.u[0]&=~KB_U0_D; break;
-		case 0x24: if (is_press) kb_st_ps2.u[0]|=KB_U0_E; else kb_st_ps2.u[0]&=~KB_U0_E; break;
-		case 0x2B: if (is_press) kb_st_ps2.u[0]|=KB_U0_F; else kb_st_ps2.u[0]&=~KB_U0_F; break;
-		case 0x34: if (is_press) kb_st_ps2.u[0]|=KB_U0_G; else kb_st_ps2.u[0]&=~KB_U0_G; break;
-		case 0x33: if (is_press) kb_st_ps2.u[0]|=KB_U0_H; else kb_st_ps2.u[0]&=~KB_U0_H; break;
-		case 0x43: if (is_press) kb_st_ps2.u[0]|=KB_U0_I; else kb_st_ps2.u[0]&=~KB_U0_I; break;
-		case 0x3B: if (is_press) kb_st_ps2.u[0]|=KB_U0_J; else kb_st_ps2.u[0]&=~KB_U0_J; break;
-		
-		case 0x42: if (is_press) kb_st_ps2.u[0]|=KB_U0_K; else kb_st_ps2.u[0]&=~KB_U0_K; break;
-		case 0x4B: if (is_press) kb_st_ps2.u[0]|=KB_U0_L; else kb_st_ps2.u[0]&=~KB_U0_L; break;
-		case 0x3A: if (is_press) kb_st_ps2.u[0]|=KB_U0_M; else kb_st_ps2.u[0]&=~KB_U0_M; break;
-		case 0x31: if (is_press) kb_st_ps2.u[0]|=KB_U0_N; else kb_st_ps2.u[0]&=~KB_U0_N; break;
-		case 0x44: if (is_press) kb_st_ps2.u[0]|=KB_U0_O; else kb_st_ps2.u[0]&=~KB_U0_O; break;
-		case 0x4D: if (is_press) kb_st_ps2.u[0]|=KB_U0_P; else kb_st_ps2.u[0]&=~KB_U0_P; break;
-		case 0x15: if (is_press) kb_st_ps2.u[0]|=KB_U0_Q; else kb_st_ps2.u[0]&=~KB_U0_Q; break;
-		case 0x2D: if (is_press) kb_st_ps2.u[0]|=KB_U0_R; else kb_st_ps2.u[0]&=~KB_U0_R; break;
-		case 0x1B: if (is_press) kb_st_ps2.u[0]|=KB_U0_S; else kb_st_ps2.u[0]&=~KB_U0_S; break;
-		case 0x2C: if (is_press) kb_st_ps2.u[0]|=KB_U0_T; else kb_st_ps2.u[0]&=~KB_U0_T; break;
-		
-		case 0x3C: if (is_press) kb_st_ps2.u[0]|=KB_U0_U; else kb_st_ps2.u[0]&=~KB_U0_U; break;
-		case 0x2A: if (is_press) kb_st_ps2.u[0]|=KB_U0_V; else kb_st_ps2.u[0]&=~KB_U0_V; break;
-		case 0x1D: if (is_press) kb_st_ps2.u[0]|=KB_U0_W; else kb_st_ps2.u[0]&=~KB_U0_W; break;
-		case 0x22: if (is_press) kb_st_ps2.u[0]|=KB_U0_X; else kb_st_ps2.u[0]&=~KB_U0_X; break;
-		case 0x35: if (is_press) kb_st_ps2.u[0]|=KB_U0_Y; else kb_st_ps2.u[0]&=~KB_U0_Y; break;
-		case 0x1A: if (is_press) kb_st_ps2.u[0]|=KB_U0_Z; else kb_st_ps2.u[0]&=~KB_U0_Z; break;
-		
-		case 0x54: if (is_press) kb_st_ps2.u[0]|=KB_U0_LEFT_BR; else kb_st_ps2.u[0]&=~KB_U0_LEFT_BR; break;
-		case 0x5B: if (is_press) kb_st_ps2.u[0]|=KB_U0_RIGHT_BR; else kb_st_ps2.u[0]&=~KB_U0_RIGHT_BR; break;
-		case 0x4C: if (is_press) kb_st_ps2.u[0]|=KB_U0_SEMICOLON; else kb_st_ps2.u[0]&=~KB_U0_SEMICOLON; break;
-		case 0x52: if (is_press) kb_st_ps2.u[0]|=KB_U0_QUOTE; else kb_st_ps2.u[0]&=~KB_U0_QUOTE; break;
-		case 0x41: if (is_press) kb_st_ps2.u[0]|=KB_U0_COMMA; else kb_st_ps2.u[0]&=~KB_U0_COMMA; break;
-		case 0x49: if (is_press) kb_st_ps2.u[0]|=KB_U0_PERIOD; else kb_st_ps2.u[0]&=~KB_U0_PERIOD; break;
-		
-		//1 -----------
-		case 0x45: if (is_press) kb_st_ps2.u[1]|=KB_U1_0; else kb_st_ps2.u[1]&=~KB_U1_0; break;
-		case 0x16: if (is_press) kb_st_ps2.u[1]|=KB_U1_1; else kb_st_ps2.u[1]&=~KB_U1_1; break;
-		case 0x1E: if (is_press) kb_st_ps2.u[1]|=KB_U1_2; else kb_st_ps2.u[1]&=~KB_U1_2; break;
-		case 0x26: if (is_press) kb_st_ps2.u[1]|=KB_U1_3; else kb_st_ps2.u[1]&=~KB_U1_3; break;
-		case 0x25: if (is_press) kb_st_ps2.u[1]|=KB_U1_4; else kb_st_ps2.u[1]&=~KB_U1_4; break;
-		case 0x2E: if (is_press) kb_st_ps2.u[1]|=KB_U1_5; else kb_st_ps2.u[1]&=~KB_U1_5; break;
-		case 0x36: if (is_press) kb_st_ps2.u[1]|=KB_U1_6; else kb_st_ps2.u[1]&=~KB_U1_6; break;
-		case 0x3D: if (is_press) kb_st_ps2.u[1]|=KB_U1_7; else kb_st_ps2.u[1]&=~KB_U1_7; break;
-		case 0x3E: if (is_press) kb_st_ps2.u[1]|=KB_U1_8; else kb_st_ps2.u[1]&=~KB_U1_8; break;
-		case 0x46: if (is_press) kb_st_ps2.u[1]|=KB_U1_9; else kb_st_ps2.u[1]&=~KB_U1_9; break;
-		
-		case 0x4E: if (is_press) kb_st_ps2.u[1]|=KB_U1_MINUS; else kb_st_ps2.u[1]&=~KB_U1_MINUS; break;
-		case 0x55: if (is_press) kb_st_ps2.u[1]|=KB_U1_EQUALS; else kb_st_ps2.u[1]&=~KB_U1_EQUALS; break;
-		case 0x5D: if (is_press) kb_st_ps2.u[1]|=KB_U1_BACKSLASH; else kb_st_ps2.u[1]&=~KB_U1_BACKSLASH; break;
-		case 0x66: if (is_press) kb_st_ps2.u[1]|=KB_U1_BACK_SPACE; else kb_st_ps2.u[1]&=~KB_U1_BACK_SPACE; break;
-		case 0x5A: if (is_press) kb_st_ps2.u[1]|=KB_U1_ENTER; else kb_st_ps2.u[1]&=~KB_U1_ENTER; break;
-		case 0x4A: if (is_press) kb_st_ps2.u[1]|=KB_U1_SLASH; else kb_st_ps2.u[1]&=~KB_U1_SLASH; break;
-		case 0x0E: if (is_press) kb_st_ps2.u[1]|=KB_U1_TILDE; else kb_st_ps2.u[1]&=~KB_U1_TILDE; break;
-		case 0x0D: if (is_press) kb_st_ps2.u[1]|=KB_U1_TAB; else kb_st_ps2.u[1]&=~KB_U1_TAB; break;
-		case 0x58: if (is_press) kb_st_ps2.u[1]|=KB_U1_CAPS_LOCK; else kb_st_ps2.u[1]&=~KB_U1_CAPS_LOCK; break;
-		case 0x76: if (is_press) kb_st_ps2.u[1]|=KB_U1_ESC; else kb_st_ps2.u[1]&=~KB_U1_ESC; break;
-		
-		case 0x12: if (is_press) kb_st_ps2.u[1]|=KB_U1_L_SHIFT; else kb_st_ps2.u[1]&=~KB_U1_L_SHIFT; break;
-		case 0x14: if (is_press) kb_st_ps2.u[1]|=KB_U1_L_CTRL; else kb_st_ps2.u[1]&=~KB_U1_L_CTRL; break;
-		case 0x11: if (is_press) kb_st_ps2.u[1]|=KB_U1_L_ALT; else kb_st_ps2.u[1]&=~KB_U1_L_ALT; break;
-		case 0x59: if (is_press) kb_st_ps2.u[1]|=KB_U1_R_SHIFT; else kb_st_ps2.u[1]&=~KB_U1_R_SHIFT; break;
-		
-		case 0x29: if (is_press) kb_st_ps2.u[1]|=KB_U1_SPACE; else kb_st_ps2.u[1]&=~KB_U1_SPACE; break;
-		//2 -----------
-		case 0x70: if (is_press) kb_st_ps2.u[2]|=KB_U2_NUM_0; else kb_st_ps2.u[2]&=~KB_U2_NUM_0; break;
-		case 0x69: if (is_press) kb_st_ps2.u[2]|=KB_U2_NUM_1; else kb_st_ps2.u[2]&=~KB_U2_NUM_1; break;
-		case 0x72: if (is_press) kb_st_ps2.u[2]|=KB_U2_NUM_2; else kb_st_ps2.u[2]&=~KB_U2_NUM_2; break;
-		case 0x7A: if (is_press) kb_st_ps2.u[2]|=KB_U2_NUM_3; else kb_st_ps2.u[2]&=~KB_U2_NUM_3; break;
-		case 0x6B: if (is_press) kb_st_ps2.u[2]|=KB_U2_NUM_4; else kb_st_ps2.u[2]&=~KB_U2_NUM_4; break;
-		case 0x73: if (is_press) kb_st_ps2.u[2]|=KB_U2_NUM_5; else kb_st_ps2.u[2]&=~KB_U2_NUM_5; break;
-		case 0x74: if (is_press) kb_st_ps2.u[2]|=KB_U2_NUM_6; else kb_st_ps2.u[2]&=~KB_U2_NUM_6; break;
-		case 0x6C: if (is_press) kb_st_ps2.u[2]|=KB_U2_NUM_7; else kb_st_ps2.u[2]&=~KB_U2_NUM_7; break;
-		case 0x75: if (is_press) kb_st_ps2.u[2]|=KB_U2_NUM_8; else kb_st_ps2.u[2]&=~KB_U2_NUM_8; break;
-		case 0x7D: if (is_press) kb_st_ps2.u[2]|=KB_U2_NUM_9; else kb_st_ps2.u[2]&=~KB_U2_NUM_9; break;
-		
-		case 0x77: if (is_press) kb_st_ps2.u[2]|=KB_U2_NUM_LOCK; else kb_st_ps2.u[2]&=~KB_U2_NUM_LOCK; break;
-		case 0x7C: if (is_press) kb_st_ps2.u[2]|=KB_U2_NUM_MULT; else kb_st_ps2.u[2]&=~KB_U2_NUM_MULT; break;
-		case 0x7B: if (is_press) kb_st_ps2.u[2]|=KB_U2_NUM_MINUS; else kb_st_ps2.u[2]&=~KB_U2_NUM_MINUS; break;
-		case 0x79: if (is_press) kb_st_ps2.u[2]|=KB_U2_NUM_PLUS; else kb_st_ps2.u[2]&=~KB_U2_NUM_PLUS; break;
-		case 0x71: if (is_press) kb_st_ps2.u[2]|=KB_U2_NUM_PERIOD; else kb_st_ps2.u[2]&=~KB_U2_NUM_PERIOD; break;
-		case 0x7E: if (is_press) kb_st_ps2.u[2]|=KB_U2_SCROLL_LOCK; else kb_st_ps2.u[2]&=~KB_U2_SCROLL_LOCK; break;
-		//3 -----------
-		case 0x05: if (is_press) kb_st_ps2.u[3]|=KB_U3_F1; else kb_st_ps2.u[3]&=~KB_U3_F1; break;
-		case 0x06: if (is_press) kb_st_ps2.u[3]|=KB_U3_F2; else kb_st_ps2.u[3]&=~KB_U3_F2; break;
-		case 0x04: if (is_press) kb_st_ps2.u[3]|=KB_U3_F3; else kb_st_ps2.u[3]&=~KB_U3_F3; break;
-		case 0x0C: if (is_press) kb_st_ps2.u[3]|=KB_U3_F4; else kb_st_ps2.u[3]&=~KB_U3_F4; break;
-		case 0x03: if (is_press) kb_st_ps2.u[3]|=KB_U3_F5; else kb_st_ps2.u[3]&=~KB_U3_F5; break;
-		case 0x0B: if (is_press) kb_st_ps2.u[3]|=KB_U3_F6; else kb_st_ps2.u[3]&=~KB_U3_F6; break;
-		case 0x83: if (is_press) kb_st_ps2.u[3]|=KB_U3_F7; else kb_st_ps2.u[3]&=~KB_U3_F7; break;
-		case 0x0A: if (is_press) kb_st_ps2.u[3]|=KB_U3_F8; else kb_st_ps2.u[3]&=~KB_U3_F8; break;
-		case 0x01: if (is_press) kb_st_ps2.u[3]|=KB_U3_F9; else kb_st_ps2.u[3]&=~KB_U3_F9; break;
-		case 0x09: if (is_press) kb_st_ps2.u[3]|=KB_U3_F10; else kb_st_ps2.u[3]&=~KB_U3_F10; break;
-		
-		case 0x78: if (is_press) kb_st_ps2.u[3]|=KB_U3_F11; else kb_st_ps2.u[3]&=~KB_U3_F11; break;
-		case 0x07: if (is_press) kb_st_ps2.u[3]|=KB_U3_F12; else kb_st_ps2.u[3]&=~KB_U3_F12; break;
-		
-		
-		
-		default:
-		break;
-	}
-	if (is_e0)
-	switch (code)
-	{
-		//1----------------
-		case 0x1F: if (is_press) kb_st_ps2.u[1]|=KB_U1_L_WIN; else kb_st_ps2.u[1]&=~KB_U1_L_WIN; break;
-		case 0x14: if (is_press) kb_st_ps2.u[1]|=KB_U1_R_CTRL; else kb_st_ps2.u[1]&=~KB_U1_R_CTRL; break;
-		case 0x11: if (is_press) kb_st_ps2.u[1]|=KB_U1_R_ALT; else kb_st_ps2.u[1]&=~KB_U1_R_ALT; break;
-		case 0x27: if (is_press) kb_st_ps2.u[1]|=KB_U1_R_WIN; else kb_st_ps2.u[1]&=~KB_U1_R_WIN; break;
-		case 0x2F: if (is_press) kb_st_ps2.u[1]|=KB_U1_MENU; else kb_st_ps2.u[1]&=~KB_U1_MENU; break;
-		//2------------------
-		//для принт скрин обработаем только 1 код
-		case 0x12: if (is_press) kb_st_ps2.u[2]|=KB_U2_PRT_SCR; else kb_st_ps2.u[2]&=~KB_U2_PRT_SCR; break;
-		
-		
-		case 0x4A: if (is_press) kb_st_ps2.u[2]|=KB_U2_NUM_SLASH; else kb_st_ps2.u[2]&=~KB_U2_NUM_SLASH; break;
-		case 0x5A: if (is_press) kb_st_ps2.u[2]|=KB_U2_NUM_ENTER; else kb_st_ps2.u[2]&=~KB_U2_NUM_ENTER; break;
-		case 0x75: if (is_press) kb_st_ps2.u[2]|=KB_U2_UP; else kb_st_ps2.u[2]&=~KB_U2_UP; break;
-		case 0x72: if (is_press) kb_st_ps2.u[2]|=KB_U2_DOWN; else kb_st_ps2.u[2]&=~KB_U2_DOWN; break;
-		case 0x74: if (is_press) kb_st_ps2.u[2]|=KB_U2_RIGHT; else kb_st_ps2.u[2]&=~KB_U2_RIGHT; break;
-		case 0x6B: if (is_press) kb_st_ps2.u[2]|=KB_U2_LEFT; else kb_st_ps2.u[2]&=~KB_U2_LEFT; break;
-		case 0x71: if (is_press) kb_st_ps2.u[2]|=KB_U2_DELETE; else kb_st_ps2.u[2]&=~KB_U2_DELETE; break;
-		case 0x69: if (is_press) kb_st_ps2.u[2]|=KB_U2_END; else kb_st_ps2.u[2]&=~KB_U2_END; break;
-		case 0x7A: if (is_press) kb_st_ps2.u[2]|=KB_U2_PAGE_DOWN; else kb_st_ps2.u[2]&=~KB_U2_PAGE_DOWN; break;
-		case 0x7D: if (is_press) kb_st_ps2.u[2]|=KB_U2_PAGE_UP; else kb_st_ps2.u[2]&=~KB_U2_PAGE_UP; break;
-		
-		case 0x6C: if (is_press) kb_st_ps2.u[2]|=KB_U2_HOME; else kb_st_ps2.u[2]&=~KB_U2_HOME; break;
-		case 0x70: if (is_press) kb_st_ps2.u[2]|=KB_U2_INSERT; else kb_st_ps2.u[2]&=~KB_U2_INSERT; break;
-		
-		
-	}
+	if (!is_e0) {
+        if (code >= ps2Scans_NE0_size) return;
+        bi = ps2Scans_NE0[code];
+    }
+
+	else {
+        if (code >= ps2Scans_E0_size) return;
+        bi = ps2Scans_E0[code];
+    }
 	
-	
+    if (bi == 0xff) return;
+    int bin = bi >> 6;
+    int keybit = bi & 31;
+    kb_st_ps2.u[bin] |= 1<<keybit;  
+
 	
 	
 }
