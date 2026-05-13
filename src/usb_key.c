@@ -269,6 +269,7 @@ const /*static*/ __in_flash() uint8_t usbScanMap[] = {
     /* 0x05 */  BITINDEX(0, KB_U0_B_POS ),
     /* 0x06 */  BITINDEX(0, KB_U0_C_POS ),
     /* 0x07 */  BITINDEX(0, KB_U0_D_POS ),
+
     /* 0x08 */  BITINDEX(0, KB_U0_E_POS ),
     /* 0x09 */  BITINDEX(0, KB_U0_F_POS ),
     /* 0x0a */  BITINDEX(0, KB_U0_G_POS ),
@@ -277,6 +278,7 @@ const /*static*/ __in_flash() uint8_t usbScanMap[] = {
     /* 0x0d */  BITINDEX(0, KB_U0_J_POS ),
     /* 0x0e */  BITINDEX(0, KB_U0_K_POS ),
     /* 0x0f */  BITINDEX(0, KB_U0_L_POS ),
+
     /* 0x10 */  BITINDEX(0, KB_U0_M_POS ),
     /* 0x11 */  BITINDEX(0, KB_U0_N_POS ),
     /* 0x12 */  BITINDEX(0, KB_U0_O_POS ),
@@ -285,6 +287,7 @@ const /*static*/ __in_flash() uint8_t usbScanMap[] = {
     /* 0x15 */  BITINDEX(0, KB_U0_R_POS ),
     /* 0x16 */  BITINDEX(0, KB_U0_S_POS ),
     /* 0x17 */  BITINDEX(0, KB_U0_T_POS ),
+
     /* 0x18 */  BITINDEX(0, KB_U0_U_POS ),
     /* 0x19 */  BITINDEX(0, KB_U0_V_POS ),
     /* 0x1a */  BITINDEX(0, KB_U0_W_POS ),
@@ -293,6 +296,7 @@ const /*static*/ __in_flash() uint8_t usbScanMap[] = {
     /* 0x1d */  BITINDEX(0, KB_U0_Z_POS ),
     /* 0x1e */  BITINDEX(1, KB_U1_1_POS ),
     /* 0x1f */  BITINDEX(1, KB_U1_2_POS ),
+
     /* 0x20 */  BITINDEX(1, KB_U1_3_POS ),
     /* 0x21 */  BITINDEX(1, KB_U1_4_POS ),
     /* 0x22 */  BITINDEX(1, KB_U1_5_POS ),
@@ -301,6 +305,7 @@ const /*static*/ __in_flash() uint8_t usbScanMap[] = {
     /* 0x25 */  BITINDEX(1, KB_U1_8_POS ),
     /* 0x26 */  BITINDEX(1, KB_U1_9_POS ),
     /* 0x27 */  BITINDEX(1, KB_U1_0_POS ),
+
     /* 0x28 */  BITINDEX(1, KB_U1_ENTER_POS ),
     /* 0x29 */  BITINDEX(1, KB_U1_ESC_POS),
     /* 0x2a */  BITINDEX(1, KB_U1_BACK_SPACE_POS ),
@@ -309,13 +314,16 @@ const /*static*/ __in_flash() uint8_t usbScanMap[] = {
     /* 0x2d */  BITINDEX(1, KB_U1_MINUS_POS ),
     /* 0x2e */  BITINDEX(1, KB_U1_EQUALS_POS ),
     /* 0x2f */  BITINDEX(0, KB_U0_LEFT_BR_POS ),
+
     /* 0x30 */  BITINDEX(0, KB_U0_RIGHT_BR_POS ),
     /* 0x31 */  BITINDEX(1, KB_U1_BACKSLASH_POS),
-    /* 0x32 */  BITINDEX(1, KB_U1_TILDE_POS ),
+    /* 0x32 */  BITINDEX(1, KB_U1_TILDE_POS ),  //KEY_HASHTILDE #~ (ISO Layout)
     /* 0x33 */  BITINDEX(0, KB_U0_SEMICOLON_POS ),
     /* 0x34 */  BITINDEX(0, KB_U0_QUOTE_POS ),
+    /* 0x35 */  BITINDEX(1, KB_U1_TILDE_POS ),  //KEY_GRAVE `~ (ANSI Layout)
     /* 0x36 */  BITINDEX(0, KB_U0_COMMA_POS ),
     /* 0x37 */  BITINDEX(0, KB_U0_PERIOD_POS ),
+
     /* 0x38 */  BITINDEX(1, KB_U1_SLASH_POS ),
     /* 0x39 */  BITINDEX(1, KB_U1_CAPS_LOCK_POS ),
     /* 0x3a */  BITINDEX(3, KB_U3_F1_POS ),
@@ -324,6 +332,7 @@ const /*static*/ __in_flash() uint8_t usbScanMap[] = {
     /* 0x3d */  BITINDEX(3, KB_U3_F4_POS ),
     /* 0x3e */  BITINDEX(3, KB_U3_F5_POS ),
     /* 0x3f */  BITINDEX(3, KB_U3_F6_POS ),
+
     /* 0x40 */  BITINDEX(3, KB_U3_F7_POS ),
     /* 0x41 */  BITINDEX(3, KB_U3_F8_POS ),
     /* 0x42 */  BITINDEX(3, KB_U3_F9_POS ),
@@ -332,6 +341,7 @@ const /*static*/ __in_flash() uint8_t usbScanMap[] = {
     /* 0x45 */  BITINDEX(3, KB_U3_F12_POS ),
     /* 0x46 */  BITINDEX(2, KB_U2_PRT_SCR_POS ),
     /* 0x47 */  BITINDEX(2, KB_U2_SCROLL_LOCK_POS),
+
     /* 0x48 */  BITINDEX(2, KB_U2_PAUSE_BREAK_POS ),
     /* 0x49 */  BITINDEX(2, KB_U2_INSERT_POS),
     /* 0x4a */  BITINDEX(2, KB_U2_HOME_POS ),
@@ -340,6 +350,7 @@ const /*static*/ __in_flash() uint8_t usbScanMap[] = {
     /* 0x4d */  BITINDEX(2, KB_U2_END_POS ),
     /* 0x4e */  BITINDEX(2, KB_U2_PAGE_DOWN_POS),
     /* 0x4f */  BITINDEX(2, KB_U2_RIGHT_POS ),
+
     /* 0x50 */  BITINDEX(2, KB_U2_LEFT_POS ),
     /* 0x51 */  BITINDEX(2, KB_U2_DOWN_POS ),
     /* 0x52 */  BITINDEX(2, KB_U2_UP_POS ),
@@ -348,6 +359,7 @@ const /*static*/ __in_flash() uint8_t usbScanMap[] = {
     /* 0x55 */  BITINDEX(2, KB_U2_NUM_MULT_POS ),
     /* 0x56 */  BITINDEX(2, KB_U2_NUM_MINUS_POS ),
     /* 0x57 */  BITINDEX(2, KB_U2_NUM_PLUS_POS ),
+
     /* 0x58 */  BITINDEX(2, KB_U2_NUM_ENTER_POS ),
     /* 0x59 */  BITINDEX(2, KB_U2_NUM_1_POS ),
     /* 0x5a */  BITINDEX(2, KB_U2_NUM_2_POS ),
@@ -356,6 +368,7 @@ const /*static*/ __in_flash() uint8_t usbScanMap[] = {
     /* 0x5d */  BITINDEX(2, KB_U2_NUM_5_POS ),
     /* 0x5e */  BITINDEX(2, KB_U2_NUM_6_POS ),
     /* 0x5f */  BITINDEX(2, KB_U2_NUM_7_POS ),
+
     /* 0x60 */  BITINDEX(2, KB_U2_NUM_8_POS ),
     /* 0x61 */  BITINDEX(2, KB_U2_NUM_9_POS ),
     /* 0x62 */  BITINDEX(2, KB_U2_NUM_0_POS ),
@@ -367,6 +380,7 @@ const /*static*/ __in_flash() uint8_t usbScanMap[] = {
 #define usbScanMapSize (sizeof(usbScanMap)/sizeof(uint8_t))
 
 void scancode_usb(uint8_t code){
+    if (code == 0) return;
     if (code >= usbScanMapSize) return;
     uint8_t bitindex = usbScanMap[code];
     if (bitindex == 0xff) return;
