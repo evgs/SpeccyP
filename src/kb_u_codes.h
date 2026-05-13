@@ -6,7 +6,6 @@ typedef struct kb_u_state
 
 }kb_u_state;
 
-
 // блок 0 буквы
 #define KB_U0_A (1<<0)
 #define KB_U0_B (1<<1)
