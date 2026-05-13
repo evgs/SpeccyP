@@ -258,6 +258,10 @@ void __not_in_flash_func(scancode_usb_s)(uint8_t code){
    if (code & 0x80) kb_st_ps2.u[1]|=KB_U1_L_WIN;; // win r
    }
 //----------------------------------------------------------
+
+/*  Code size 487924/383300 vs 546500/387376 before optimization
+ *
+ */
 #define BITINDEX(BINN, BITNUM) ((BINN)<<6 | (BITNUM))
 
 const /*static*/ __in_flash() uint8_t usbScanMap[] = {
