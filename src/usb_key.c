@@ -265,7 +265,7 @@ void __not_in_flash_func(scancode_usb_s)(uint8_t code){
  */
 #define BITINDEX(BINN, BITNUM) ((BINN)<<6 | (BITNUM))
 
-const /*static*/ __in_flash() uint8_t usbScanMap[] = {
+const static __in_flash() uint8_t usbScanMap[] = {
     /* 0x00 */  0xff,
     /* 0x01 */  0xff,
     /* 0x02 */  0xff,

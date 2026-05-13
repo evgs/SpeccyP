@@ -92,7 +92,7 @@ void zx_kb_decode(uint8_t* zx_kb_state)
 };
 
 #define BITINDEX(BINN, BITNUM) ((BINN)<<6 | (BITNUM))
-const __in_flash() uint8_t ps2Scans_NE0[] = {
+const static __in_flash() uint8_t ps2Scans_NE0[] = {
 		/* 0x00: */ 0xff,
 		/* 0x01: */ BITINDEX(3, KB_U3_F9_POS),
         /* 0x02: */ 0xff,
@@ -246,7 +246,7 @@ const __in_flash() uint8_t ps2Scans_NE0[] = {
 #define ps2Scans_NE0_size (sizeof(ps2Scans_NE0)/sizeof(uint8_t))
 static_assert(ps2Scans_NE0_size == 0x84, "Wrong array size!");
 
-const __in_flash() uint8_t ps2Scans_E0[] = {
+const static __in_flash() uint8_t ps2Scans_E0[] = {
         /* 0x00..0x07: (8)*/
             0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
         /* 0x08..0x0f: (8)*/
