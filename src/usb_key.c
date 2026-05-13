@@ -258,129 +258,121 @@ void __not_in_flash_func(scancode_usb_s)(uint8_t code){
    if (code & 0x80) kb_st_ps2.u[1]|=KB_U1_L_WIN;; // win r
    }
 //----------------------------------------------------------
- void __not_in_flash_func(scancode_usb)(uint8_t code){
-   
-   switch (code)
-   {
-    case 0x00:   break;
-    case 0x04:  kb_st_ps2.u[0]|=KB_U0_A; break;
-    case 0x05:  kb_st_ps2.u[0]|=KB_U0_B; break;
-    case 0x06:  kb_st_ps2.u[0]|=KB_U0_C; break;
-    case 0x07:  kb_st_ps2.u[0]|=KB_U0_D; break;
+#define BITINDEX(BINN, BITNUM) ((BINN)<<6 | (BITNUM))
 
-    case 0x08:  kb_st_ps2.u[0]|=KB_U0_E; break;
-    case 0x09:  kb_st_ps2.u[0]|=KB_U0_F; break;
-    case 0x0a:  kb_st_ps2.u[0]|=KB_U0_G; break;
-    case 0x0b:  kb_st_ps2.u[0]|=KB_U0_H; break;
-    case 0x0c:  kb_st_ps2.u[0]|=KB_U0_I; break;
-    case 0x0d:  kb_st_ps2.u[0]|=KB_U0_J; break;
-    case 0x0e:  kb_st_ps2.u[0]|=KB_U0_K; break;
-    case 0x0f:  kb_st_ps2.u[0]|=KB_U0_L; break;
+const /*static*/ __in_flash() uint8_t usbScanMap[] = {
+    /* 0x00 */  0xff,
+    /* 0x01 */  0xff,
+    /* 0x02 */  0xff,
+    /* 0x03 */  0xff,
+    /* 0x04 */  BITINDEX(0, KB_U0_A_POS ),
+    /* 0x05 */  BITINDEX(0, KB_U0_B_POS ),
+    /* 0x06 */  BITINDEX(0, KB_U0_C_POS ),
+    /* 0x07 */  BITINDEX(0, KB_U0_D_POS ),
+    /* 0x08 */  BITINDEX(0, KB_U0_E_POS ),
+    /* 0x09 */  BITINDEX(0, KB_U0_F_POS ),
+    /* 0x0a */  BITINDEX(0, KB_U0_G_POS ),
+    /* 0x0b */  BITINDEX(0, KB_U0_H_POS ),
+    /* 0x0c */  BITINDEX(0, KB_U0_I_POS ),
+    /* 0x0d */  BITINDEX(0, KB_U0_J_POS ),
+    /* 0x0e */  BITINDEX(0, KB_U0_K_POS ),
+    /* 0x0f */  BITINDEX(0, KB_U0_L_POS ),
+    /* 0x10 */  BITINDEX(0, KB_U0_M_POS ),
+    /* 0x11 */  BITINDEX(0, KB_U0_N_POS ),
+    /* 0x12 */  BITINDEX(0, KB_U0_O_POS ),
+    /* 0x13 */  BITINDEX(0, KB_U0_P_POS ),
+    /* 0x14 */  BITINDEX(0, KB_U0_Q_POS ),
+    /* 0x15 */  BITINDEX(0, KB_U0_R_POS ),
+    /* 0x16 */  BITINDEX(0, KB_U0_S_POS ),
+    /* 0x17 */  BITINDEX(0, KB_U0_T_POS ),
+    /* 0x18 */  BITINDEX(0, KB_U0_U_POS ),
+    /* 0x19 */  BITINDEX(0, KB_U0_V_POS ),
+    /* 0x1a */  BITINDEX(0, KB_U0_W_POS ),
+    /* 0x1b */  BITINDEX(0, KB_U0_X_POS ),
+    /* 0x1c */  BITINDEX(0, KB_U0_Y_POS ),
+    /* 0x1d */  BITINDEX(0, KB_U0_Z_POS ),
+    /* 0x1e */  BITINDEX(1, KB_U1_1_POS ),
+    /* 0x1f */  BITINDEX(1, KB_U1_2_POS ),
+    /* 0x20 */  BITINDEX(1, KB_U1_3_POS ),
+    /* 0x21 */  BITINDEX(1, KB_U1_4_POS ),
+    /* 0x22 */  BITINDEX(1, KB_U1_5_POS ),
+    /* 0x23 */  BITINDEX(1, KB_U1_6_POS ),
+    /* 0x24 */  BITINDEX(1, KB_U1_7_POS ),
+    /* 0x25 */  BITINDEX(1, KB_U1_8_POS ),
+    /* 0x26 */  BITINDEX(1, KB_U1_9_POS ),
+    /* 0x27 */  BITINDEX(1, KB_U1_0_POS ),
+    /* 0x28 */  BITINDEX(1, KB_U1_ENTER_POS ),
+    /* 0x29 */  BITINDEX(1, KB_U1_ESC_POS),
+    /* 0x2a */  BITINDEX(1, KB_U1_BACK_SPACE_POS ),
+    /* 0x2b */  BITINDEX(1, KB_U1_TAB_POS ),
+    /* 0x2c */  BITINDEX(1, KB_U1_SPACE_POS ),
+    /* 0x2d */  BITINDEX(1, KB_U1_MINUS_POS ),
+    /* 0x2e */  BITINDEX(1, KB_U1_EQUALS_POS ),
+    /* 0x2f */  BITINDEX(0, KB_U0_LEFT_BR_POS ),
+    /* 0x30 */  BITINDEX(0, KB_U0_RIGHT_BR_POS ),
+    /* 0x31 */  BITINDEX(1, KB_U1_BACKSLASH_POS),
+    /* 0x32 */  BITINDEX(1, KB_U1_TILDE_POS ),
+    /* 0x33 */  BITINDEX(0, KB_U0_SEMICOLON_POS ),
+    /* 0x34 */  BITINDEX(0, KB_U0_QUOTE_POS ),
+    /* 0x36 */  BITINDEX(0, KB_U0_COMMA_POS ),
+    /* 0x37 */  BITINDEX(0, KB_U0_PERIOD_POS ),
+    /* 0x38 */  BITINDEX(1, KB_U1_SLASH_POS ),
+    /* 0x39 */  BITINDEX(1, KB_U1_CAPS_LOCK_POS ),
+    /* 0x3a */  BITINDEX(3, KB_U3_F1_POS ),
+    /* 0x3b */  BITINDEX(3, KB_U3_F2_POS ),
+    /* 0x3c */  BITINDEX(3, KB_U3_F3_POS ),
+    /* 0x3d */  BITINDEX(3, KB_U3_F4_POS ),
+    /* 0x3e */  BITINDEX(3, KB_U3_F5_POS ),
+    /* 0x3f */  BITINDEX(3, KB_U3_F6_POS ),
+    /* 0x40 */  BITINDEX(3, KB_U3_F7_POS ),
+    /* 0x41 */  BITINDEX(3, KB_U3_F8_POS ),
+    /* 0x42 */  BITINDEX(3, KB_U3_F9_POS ),
+    /* 0x43 */  BITINDEX(3, KB_U3_F10_POS ),
+    /* 0x44 */  BITINDEX(3, KB_U3_F11_POS ),
+    /* 0x45 */  BITINDEX(3, KB_U3_F12_POS ),
+    /* 0x46 */  BITINDEX(2, KB_U2_PRT_SCR_POS ),
+    /* 0x47 */  BITINDEX(2, KB_U2_SCROLL_LOCK_POS),
+    /* 0x48 */  BITINDEX(2, KB_U2_PAUSE_BREAK_POS ),
+    /* 0x49 */  BITINDEX(2, KB_U2_INSERT_POS),
+    /* 0x4a */  BITINDEX(2, KB_U2_HOME_POS ),
+    /* 0x4b */  BITINDEX(2, KB_U2_PAGE_UP_POS ),
+    /* 0x4c */  BITINDEX(2, KB_U2_DELETE_POS ),
+    /* 0x4d */  BITINDEX(2, KB_U2_END_POS ),
+    /* 0x4e */  BITINDEX(2, KB_U2_PAGE_DOWN_POS),
+    /* 0x4f */  BITINDEX(2, KB_U2_RIGHT_POS ),
+    /* 0x50 */  BITINDEX(2, KB_U2_LEFT_POS ),
+    /* 0x51 */  BITINDEX(2, KB_U2_DOWN_POS ),
+    /* 0x52 */  BITINDEX(2, KB_U2_UP_POS ),
+    /* 0x53 */  BITINDEX(2, KB_U2_NUM_LOCK_POS ),
+    /* 0x54 */  BITINDEX(2, KB_U2_NUM_SLASH_POS ),
+    /* 0x55 */  BITINDEX(2, KB_U2_NUM_MULT_POS ),
+    /* 0x56 */  BITINDEX(2, KB_U2_NUM_MINUS_POS ),
+    /* 0x57 */  BITINDEX(2, KB_U2_NUM_PLUS_POS ),
+    /* 0x58 */  BITINDEX(2, KB_U2_NUM_ENTER_POS ),
+    /* 0x59 */  BITINDEX(2, KB_U2_NUM_1_POS ),
+    /* 0x5a */  BITINDEX(2, KB_U2_NUM_2_POS ),
+    /* 0x5b */  BITINDEX(2, KB_U2_NUM_3_POS ),
+    /* 0x5c */  BITINDEX(2, KB_U2_NUM_4_POS ),
+    /* 0x5d */  BITINDEX(2, KB_U2_NUM_5_POS ),
+    /* 0x5e */  BITINDEX(2, KB_U2_NUM_6_POS ),
+    /* 0x5f */  BITINDEX(2, KB_U2_NUM_7_POS ),
+    /* 0x60 */  BITINDEX(2, KB_U2_NUM_8_POS ),
+    /* 0x61 */  BITINDEX(2, KB_U2_NUM_9_POS ),
+    /* 0x62 */  BITINDEX(2, KB_U2_NUM_0_POS ),
+    /* 0x63 */  BITINDEX(2, KB_U2_NUM_PERIOD_POS ),
+    /* 0x64 */  0xff,
+    /* 0x65 */  BITINDEX(1, KB_U1_MENU_POS),
 
-    case 0x10:  kb_st_ps2.u[0]|=KB_U0_M; break;
-    case 0x11:  kb_st_ps2.u[0]|=KB_U0_N; break;
-    case 0x12:  kb_st_ps2.u[0]|=KB_U0_O; break;
-    case 0x13:  kb_st_ps2.u[0]|=KB_U0_P; break;
-    case 0x14:  kb_st_ps2.u[0]|=KB_U0_Q; break;
-    case 0x15:  kb_st_ps2.u[0]|=KB_U0_R; break;
-    case 0x16:  kb_st_ps2.u[0]|=KB_U0_S; break;
-    case 0x17:  kb_st_ps2.u[0]|=KB_U0_T; break;
-    
-    case 0x18:  kb_st_ps2.u[0]|=KB_U0_U; break;
-    case 0x19:  kb_st_ps2.u[0]|=KB_U0_V; break;
-    case 0x1a:  kb_st_ps2.u[0]|=KB_U0_W; break;
-    case 0x1b:  kb_st_ps2.u[0]|=KB_U0_X; break;
-    case 0x1c:  kb_st_ps2.u[0]|=KB_U0_Y; break;
-    case 0x1d:  kb_st_ps2.u[0]|=KB_U0_Z; break;
-    case 0x1e:  kb_st_ps2.u[1]|=KB_U1_1; break;
-    case 0x1f:  kb_st_ps2.u[1]|=KB_U1_2; break;
-    
-    case 0x20:  kb_st_ps2.u[1]|=KB_U1_3; break;
-    case 0x21:  kb_st_ps2.u[1]|=KB_U1_4; break;
-    case 0x22:  kb_st_ps2.u[1]|=KB_U1_5; break;
-    case 0x23:  kb_st_ps2.u[1]|=KB_U1_6; break;
-    case 0x24:  kb_st_ps2.u[1]|=KB_U1_7; break;
-    case 0x25:  kb_st_ps2.u[1]|=KB_U1_8; break;
-    case 0x26:  kb_st_ps2.u[1]|=KB_U1_9; break;
-    case 0x27:  kb_st_ps2.u[1]|=KB_U1_0; break;
+};
+#define usbScanMapSize (sizeof(usbScanMap)/sizeof(uint8_t))
 
-    case 0x28:  kb_st_ps2.u[1]|=KB_U1_ENTER; break;
-    case 0x29:  kb_st_ps2.u[1]|=KB_U1_ESC;break;
-    case 0x2a:  kb_st_ps2.u[1]|=KB_U1_BACK_SPACE; break;
-    case 0x2b:  kb_st_ps2.u[1]|=KB_U1_TAB; break;
-    case 0x2c:  kb_st_ps2.u[1]|=KB_U1_SPACE; break;
-    case 0x2d:  kb_st_ps2.u[1]|=KB_U1_MINUS; break;
-    case 0x2e:  kb_st_ps2.u[1]|=KB_U1_EQUALS; break;
-    case 0x2f:  kb_st_ps2.u[0]|=KB_U0_LEFT_BR; break;
-
-    case 0x30:  kb_st_ps2.u[0]|=KB_U0_RIGHT_BR; break;
-    case 0x31:  kb_st_ps2.u[1]|=KB_U1_BACKSLASH;break;
-    case 0x32:  kb_st_ps2.u[1]|=KB_U1_TILDE; break;
-    case 0x33:  kb_st_ps2.u[0]|=KB_U0_SEMICOLON; break;
-    case 0x34:  kb_st_ps2.u[0]|=KB_U0_QUOTE; break;
-    case 0x36:  kb_st_ps2.u[0]|=KB_U0_COMMA; break;
-    case 0x37:  kb_st_ps2.u[0]|=KB_U0_PERIOD; break;
-
-    case 0x38:  kb_st_ps2.u[1]|=KB_U1_SLASH; break;
-    case 0x39:  kb_st_ps2.u[1]|=KB_U1_CAPS_LOCK; break;
-    case 0x3a:  kb_st_ps2.u[3]|=KB_U3_F1; break;
-    case 0x3b:  kb_st_ps2.u[3]|=KB_U3_F2; break;
-    case 0x3c:  kb_st_ps2.u[3]|=KB_U3_F3; break;
-    case 0x3d:  kb_st_ps2.u[3]|=KB_U3_F4; break;
-    case 0x3e:  kb_st_ps2.u[3]|=KB_U3_F5; break;
-    case 0x3f:  kb_st_ps2.u[3]|=KB_U3_F6; break;
-
-    case 0x40:  kb_st_ps2.u[3]|=KB_U3_F7; break;
-    case 0x41:  kb_st_ps2.u[3]|=KB_U3_F8; break;
-    case 0x42:  kb_st_ps2.u[3]|=KB_U3_F9; break;
-    case 0x43:  kb_st_ps2.u[3]|=KB_U3_F10;break;
-    case 0x44:  kb_st_ps2.u[3]|=KB_U3_F11; break;
-    case 0x45:  kb_st_ps2.u[3]|=KB_U3_F12; break;
-    case 0x46:  kb_st_ps2.u[2]|=KB_U2_PRT_SCR; break;
-    case 0x47:  kb_st_ps2.u[2]|=KB_U2_SCROLL_LOCK;break;
-
-    case 0x48:  kb_st_ps2.u[2]|=KB_U2_PAUSE_BREAK; break;
-    case 0x49:  kb_st_ps2.u[2]|=KB_U2_INSERT;  break;
-    case 0x4a:  kb_st_ps2.u[2]|=KB_U2_HOME; break;
-    case 0x4b:  kb_st_ps2.u[2]|=KB_U2_PAGE_UP;  break; 
-    case 0x4c:  kb_st_ps2.u[2]|=KB_U2_DELETE; break;
-    case 0x4d:  kb_st_ps2.u[2]|=KB_U2_END;  break;
-    case 0x4e:  kb_st_ps2.u[2]|=KB_U2_PAGE_DOWN;  break;
-    case 0x4f:  kb_st_ps2.u[2]|=KB_U2_RIGHT; break;
-
-    case 0x50:  kb_st_ps2.u[2]|=KB_U2_LEFT;  break;
-    case 0x51:  kb_st_ps2.u[2]|=KB_U2_DOWN;  break;
-    case 0x52:  kb_st_ps2.u[2]|=KB_U2_UP;  break;
-    case 0x53:  kb_st_ps2.u[2]|=KB_U2_NUM_LOCK; break;
-    case 0x54:  kb_st_ps2.u[2]|=KB_U2_NUM_SLASH;break;
-    case 0x55:  kb_st_ps2.u[2]|=KB_U2_NUM_MULT; break;
-    case 0x56:  kb_st_ps2.u[2]|=KB_U2_NUM_MINUS; break;
-    case 0x57:  kb_st_ps2.u[2]|=KB_U2_NUM_PLUS; break;
-
-    case 0x58:  kb_st_ps2.u[2]|=KB_U2_NUM_ENTER;  break;
-    case 0x59:  kb_st_ps2.u[2]|=KB_U2_NUM_1; break;
-    case 0x5a:  kb_st_ps2.u[2]|=KB_U2_NUM_2; break;
-    case 0x5b:  kb_st_ps2.u[2]|=KB_U2_NUM_3; break;
-    case 0x5c:  kb_st_ps2.u[2]|=KB_U2_NUM_4; break;
-    case 0x5d:  kb_st_ps2.u[2]|=KB_U2_NUM_5; break;
-    case 0x5e:  kb_st_ps2.u[2]|=KB_U2_NUM_6; break;
-    case 0x5f:  kb_st_ps2.u[2]|=KB_U2_NUM_7; break;
-
-    case 0x60:  kb_st_ps2.u[2]|=KB_U2_NUM_8; break;
-    case 0x61:  kb_st_ps2.u[2]|=KB_U2_NUM_9; break;
-    case 0x62:  kb_st_ps2.u[2]|=KB_U2_NUM_0; break;
-    case 0x63:  kb_st_ps2.u[2]|=KB_U2_NUM_PERIOD; break;
-
-    //64?
-    case 0x65:  kb_st_ps2.u[1]|=KB_U1_MENU;  break;
-    
-    
-
-
-    
-    //3 -----------
-    default : break;
-   }
+void scancode_usb(uint8_t code){
+    if (code >= usbScanMapSize) return;
+    uint8_t bitindex = usbScanMap[code];
+    if (bitindex == 0xff) return;
+    int bin = bitindex >> 6;
+    int keybit = bitindex & 31;
+    kb_st_ps2.u[bin] |= 1<<keybit;  
  }
 //----------------------------------------------------------------------------
 void __not_in_flash_func(keyboard_report) (uint8_t const *report, uint16_t len)
