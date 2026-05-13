@@ -1,5 +1,126 @@
 #include "kb_u_codes.h"
 #include "string.h"
+
+//translate keys outside of standard ZX keyboard by accords
+// for example, ';' map to SS+O
+static bool accordsEmulation = true;
+
+void kb_enableAccords(bool enable);
+bool kb_getAccords();
+void convert_kb_accords(kb_u_state* kb_st,uint8_t* zx_kb);
+
+typedef struct {
+    const char u, n;
+    const char k, schift_k, ctrl_k, alt_k;
+} KeyDef;
+
+const KeyDef kbdUS [] = {
+    0, 0, 'a','A', 1, 0x81,
+    0, 1, 'b','B', 2, 0x82,
+    0, 2, 'c','C', 3, 0x83,
+    0, 3, 'd','D', 4, 0x84,
+    0, 4, 'e','E', 5, 0x85,
+    0, 5, 'f','F', 6, 0x86,
+    0, 6, 'g','G', 7, 0x87,
+    0, 7, 'h','H', 8, 0x88,
+    0, 8, 'i','I', 9, 0x89,
+    0, 9, 'j','J', 0x0a, 0x8a,
+    0,10, 'k','K', 0x0b, 0x8b,
+    0,11, 'l','L', 0x0c, 0x8c,
+    0,12, 'm','M', 0x0d, 0x8d,
+    0,13, 'n','N', 0x0e, 0x8e,
+    0,14, 'o','O', 0x0f, 0x8f,
+    0,15, 'p','P', 0x10, 0x90,
+    0,16, 'q','Q', 0x11, 0x91,
+    0,17, 'r','R', 0x12, 0x92,
+    0,18, 's','S', 0x13, 0x93,
+    0,19, 't','T', 0x14, 0x94,
+    0,20, 'u','U', 0x15, 0x95,
+    0,21, 'v','V', 0x16, 0x96,
+    0,22, 'w','W', 0x17, 0x97,
+    0,23, 'x','X', 0x18, 0x98,
+    0,24, 'y','Y', 0x1a, 0x99,
+    0,25, 'z','Z', 0x1b, 0x9a,
+
+    0,26, ';', ':',  0, 0,
+    0,27, '\'','\"', 0, 0,
+    0,28, ',','<',   0, 0,
+    0,29, '.','>',   0, 0,
+    0,30, ',','<',   0, 0,
+    0,31, '.','>',   0, 0,
+
+    1, 0, '0',')',      0, 0xa0,
+    1, 1, '1','!',      0, 0xa1,
+    1, 2, '2','@',      0, 0xa2,
+    1, 3, '3','#',      0, 0xa3,
+    1, 4, '4','$',      0, 0xa4,
+    1, 5, '5','%',      0, 0xa5,
+    1, 6, '6','^',      0, 0xa6,
+    1, 7, '7','&',      0, 0xa7,
+    1, 8, '8','*',      0, 0xa8,
+    1, 9, '9','(',      0, 0xa9,
+
+    1,10, '\r','\r',    0, 0,    //ENTER
+    1,11, '/','?',      0, 0,    //SLASH
+    1,12, '-','_',      0, 0,    //MINUS
+    1,13, '=','+',      0, 0,    //EQUALS
+    1,14, '\\','|',     0, 0,
+    1,15, 0xaa,0xaa,    0, 0,    //CAPS LOCK
+    1,16, '\t','\t',    0, 0,    //TAB
+    1,17, 0x08,0x08,    0, 0,    //BACKSPACE
+    1,18, 0x1b,0x1b,    0, 0,    //ESC
+    1,19, '`','~',      0, 0,    //TILDE
+    1,20, 0xab,0xab,    0, 0,
+    1,29, ' ',' ',      0, 0,    //SPACE
+    2, 0, '0','0',      0, 0,    //NUM0
+    2, 1, '1','1',      0, 0,    //NUM1
+    2, 2, '2','2',      0, 0,    //NUM2
+    2, 3, '3','3',      0, 0,    //NUM3
+    2, 4, '4','4',      0, 0,    //NUM4
+    2, 5, '5','5',      0, 0,    //NUM5
+    2, 6, '6','6',      0, 0,    //NUM6
+    2, 7, '7','7',      0, 0,    //NUM7
+    2, 8, '8','8',      0, 0,    //NUM8
+    2, 9, '9','9',      0, 0,    //NUM9
+    2,10, '\r','\r',    0, 0,    //NUMENTER
+    2,11, '/','/',      0, 0,    //NUMSLASH
+    2,12, '-','-',      0, 0,    //NUMMINUS
+    2,13, '+','+',      0, 0,    //NUMPLUS
+    2,14, '*','*',      0, 0,    //NUMMUL
+    2,15, '.','.',      0, 0,    //NUMPERIOD
+    2,16, 0,  0,        0, 0,    //NUMLOCK
+    2,17, 0x7f,0x7f,    0, 0,    //DEL
+
+    2,18, 0xac,0xac,    0, 0,    //SCRLOCK
+    2,19, 0xad,0xad,    0, 0,    //PAUSE
+    2,20, 0xB0,0xB0,    0, 0,    //INS
+    2,21, 0xB7,0xB7,    0, 0,    //HOME
+    2,22, 0xB9,0xB9,    0, 0,    //PGUP
+    2,23, 0xB3,0xB3,    0, 0,    //PGDN
+    2,24, 0xae,0xae,    0, 0,    //PRTSCR
+    2,25, 0xB1,0xB1,    0, 0,    //END
+    2,26, 0xB8,0xB8,    0, 0,    //UP
+    2,27, 0xB2,0xB2,    0, 0,    //DOWN
+    2,28, 0xB4,0xB4,    0, 0,    //LEFT
+    2,29, 0xB6,0xB6,    0, 0,    //RIGHT
+
+    3, 1, 0xF1,0xF1,    0, 0,    //F1
+    3, 2, 0xF2,0xF2,    0, 0,    //F2
+    3, 3, 0xF3,0xF3,    0, 0,    //F3
+    3, 4, 0xF4,0xF4,    0, 0,    //F4
+    3, 5, 0xF5,0xF5,    0, 0,    //F5
+    3, 6, 0xF6,0xF6,    0, 0,    //F6
+    3, 7, 0xF7,0xF7,    0, 0,    //F7
+    3, 8, 0xF8,0xF8,    0, 0,    //F8
+    3, 9, 0xF9,0xF9,    0, 0,    //F9
+    3,10, 0xFA,0xFA,    0, 0,    //F10
+    3,11, 0xFB,0xFB,    0, 0,    //F11
+    3,12, 0xFC,0xFC,    0, 0,    //F12
+
+
+    0xff,0xff, 0,0, 0,0,        //END OF TABLE
+};
+
 void keys_to_str(char* str_buf,char s_char,kb_u_state kb_state)
 {
     char s_str[2];
