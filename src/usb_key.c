@@ -261,7 +261,7 @@ void __not_in_flash_func(scancode_usb_s)(uint8_t code){
 //----------------------------------------------------------
 
 /*  Code size 487924/383300 vs 546500/387376 before optimization
- *
+ *  finally (ps/2+usb) 542320/387376
  */
 #define BITINDEX(BINN, BITNUM) ((BINN)<<6 | (BITNUM))
 
