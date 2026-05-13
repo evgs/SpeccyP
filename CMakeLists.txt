@@ -24,6 +24,15 @@ execute_process(
     OUTPUT_STRIP_TRAILING_WHITESPACE
     ERROR_QUIET
 )
+
+# Generate verbose disassembly with source listing included
+function(pico_generate_disassembly TARGET)
+    add_custom_command(TARGET ${TARGET} POST_BUILD
+        COMMAND ${CMAKE_OBJDUMP} -S $<TARGET_FILE:${TARGET}> > ${TARGET}.lst
+        COMMENT "Generating disassembly listing for ${TARGET}"
+    )
+endfunction()
+
 # Устанавливаем параметры платы и чипа и так далее
 set(PICO_BOARD pico2 CACHE STRING "Board type")
 
@@ -1130,3 +1139,4 @@ target_link_options(${PROJECT_NAME} PRIVATE -Xlinker --print-memory-usage --data
 
 pico_add_extra_outputs(${PROJECT_NAME})
 
+pico_generate_disassembly(${PROJECT_NAME})
