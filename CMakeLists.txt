@@ -1080,7 +1080,7 @@ else()
 endif()
 
 if(DEBUG)
-    SET(BUILD_NAME "${PROJECT_NAME}")
+#    SET(BUILD_NAME "${PROJECT_NAME}")
     
     # 
 #pico_enable_stdio_usb(${PROJECT_NAME} 0)
@@ -1140,3 +1140,11 @@ target_link_options(${PROJECT_NAME} PRIVATE -Xlinker --print-memory-usage --data
 pico_add_extra_outputs(${PROJECT_NAME})
 
 pico_generate_disassembly(${PROJECT_NAME})
+
+if (DEBUG)
+add_custom_target(link_target ALL
+    COMMAND ${CMAKE_COMMAND} -E create_symlink
+    ${CMAKE_BINARY_DIR}/${BUILD_NAME}.elf
+    ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.elf
+)
+endif()
