@@ -331,7 +331,11 @@ void translate_scancode(uint8_t code, bool is_press, bool is_e0, bool is_e1)
     if (bi == 0xff) return;
     int bin = bi >> 6;
     int keybit = bi & 31;
-    kb_st_ps2.u[bin] |= 1<<keybit;  
+    if (is_press) {
+        kb_st_ps2.u[bin] |= 1<<keybit;  
+    } else {
+        kb_st_ps2.u[bin] &= ~(1<<keybit);  
+    }
 
 	
 	
