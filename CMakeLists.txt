@@ -39,19 +39,33 @@ set(PICO_BOARD pico2 CACHE STRING "Board type")
 set(DEBUG ON)
 
 # == Конфигурация  SpeccyP ==
-set (BASE_VERSION "1.6.1 ${GIT_VERSION}")
+set (BASE_VERSION "1.6.3 ${GIT_VERSION}")
 set(MOS2 OFF) # компиляция под MOS2 ON
 
 # Конфигурация сборки (можно задать через -DSPECCY_CONFIG=... и -DM_BOARD=...)
-# SPECCY_CONFIG: SPECCY | SPECCY_WSZERO2 | GSP_FULL | GSP_LITE
+# SPECCY_CONFIG: SPECCY | SPECCY_WSZERO1  | SPECCY_WSZERO2  | GSP_FULL | GSP_M2  |GSP_LITE
 # M_BOARD:       MURM1 | MURM2 | PI_CARD | WS_ZERO2 | PICO_DV | PICO_PC
-set(SPECCY_CONFIG "SPECCY" CACHE STRING "Конфигурация сборки: SPECCY, SPECCY_WSZERO2, GSP_FULL, GSP_LITE")
+set(SPECCY_CONFIG "SPECCY" CACHE STRING "Конфигурация сборки: SPECCY, SPECCY_WSZERO1, SPECCY_WSZERO2, GSP_FULL, GSP_M2, GSP_LITE")
 set_property(CACHE SPECCY_CONFIG PROPERTY STRINGS SPECCY SPECCY_WSZERO2 GSP_FULL GSP_LITE)
-
-set(M_BOARD "MURM1" CACHE STRING "Тип платы: MURM1, MURM2, PI_CARD, WS_ZERO2, PICO_DV, PICO_PC")
+set(M_BOARD "MURM2" CACHE STRING "Тип платы: MURM1, MURM2, PI_CARD, WS_ZERO1, WS_ZERO2, PICO_DV, PICO_PC, GSP_M2")
 set_property(CACHE M_BOARD PROPERTY STRINGS MURM1 MURM2 PI_CARD WS_ZERO2 PICO_DV PICO_PC)
 
 option(PCM5122 "PCM5122 DAC для WS_ZERO2 (I2S 21/18/19 + I2C 2/3, PS/2 на 14/15)" OFF)
+
+# HDMI-драйвер на родной HSTX-периферии RP2350 (плюс HDMI-audio через
+# Data Islands, если соберётесь его включать). Полностью заменяет
+# легаси-драйвер на PIO и путь I2S-аудио.
+# Аппаратные ограничения: HSTX занимает GPIO 12-19, поэтому работает
+# только на плате M2. clk_sys должен быть целым кратным 126 МГц
+# (домен пиксельклока).
+option(HDMI_HSTX "Драйвер HDMI на HSTX RP2350 (только M2)" OFF)
+
+# USB CDC-консоль вместо USB HID Host. С ней нельзя пользоваться
+# USB-клавиатурой/джойстиком, зато появляется CDC-ACM stdio: можно
+# писать printf и читать его через terminal на хосте. На старте
+# даётся 5 секунд, чтобы хост успел поднять /dev/cu.usbmodem* и
+# терминал подцепился до того, как эмулятор тронется с места.
+option(USB_SERIAL "USB CDC console (USB HID Host отключается)" OFF)
 #---------------------
 ###
 
@@ -74,7 +88,24 @@ if(SPECCY_CONFIG STREQUAL "GSP_FULL")
         MIDI
     )
       set(GENERAL_SOUND ON)
-    
+#
+elseif(SPECCY_CONFIG STREQUAL "GSP_M2")
+    set(SPECCY_CONFIG_DEFINITIONS 
+        
+        CPU_MHZ=378 # 378 MHz
+        FLASH_MAX_FREQ_MHZ=166
+        PSRAM_MAX_FREQ_MHZ=166
+        HDMI_DIV=1.5 # hdmi 60Hz
+
+        TEST_DEBUG #
+
+        GENERAL_SOUND 
+        TURBOSOUND
+        Z_CONTROLER
+        MIDI
+    )
+        set(GENERAL_SOUND ON)
+#        
 elseif(SPECCY_CONFIG STREQUAL "GSP_LITE")
     set(SPECCY_CONFIG_DEFINITIONS  
 
@@ -88,7 +119,20 @@ elseif(SPECCY_CONFIG STREQUAL "GSP_LITE")
 
     )
       set(GENERAL_SOUND ON)
+###
+elseif(SPECCY_CONFIG STREQUAL "SPECCY_WSZERO1")
+    set(SPECCY_CONFIG_DEFINITIONS  
 
+        CPU_MHZ=378 MHz
+        FLASH_MAX_FREQ_MHZ=66
+        PSRAM_MAX_FREQ_MHZ=100
+       # HDMI_DIV=1.5 # hdmi 60Hz
+        HDMI_DIV=1.5 # hdmi 75Hz 378  60Hz 252
+        TEST_DEBUG #
+
+    )
+      set(GENERAL_SOUND OFF)
+###
 elseif(SPECCY_CONFIG STREQUAL "SPECCY_WSZERO2")
     set(SPECCY_CONFIG_DEFINITIONS  
 
@@ -188,6 +232,42 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${OUTPUT_DIR}")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${OUTPUT_DIR}")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${OUTPUT_DIR}")
 
+if(HDMI_HSTX AND NOT M_BOARD STREQUAL "MURM2")
+    message(FATAL_ERROR
+        "HDMI_HSTX требует M_BOARD=MURM2 (HSTX выводится на GPIO 12-19). "
+        "У M_BOARD=${M_BOARD} HDMI разведён на других пинах.")
+endif()
+
+if(HDMI_HSTX)
+    # HSTX хочет целочисленный делитель clk_sys в свой 126 МГц домен
+    # пиксельклока. CPU_MHZ выставляется выше через SPECCY_CONFIG_DEFINITIONS;
+    # пересчитываем его в MODE_HSTX_CLK_DIV (504/4=126, 252/2=126 и т.д.).
+    string(REGEX MATCH "CPU_MHZ=([0-9]+)" _cpu_mhz_match "${SPECCY_CONFIG_DEFINITIONS}")
+    set(_cpu_mhz_value "${CMAKE_MATCH_1}")
+    if(_cpu_mhz_value EQUAL 504)
+        set(HSTX_CLK_DIV 4)
+    elseif(_cpu_mhz_value EQUAL 378)
+        set(HSTX_CLK_DIV 3)
+    elseif(_cpu_mhz_value EQUAL 252)
+        set(HSTX_CLK_DIV 2)
+    elseif(_cpu_mhz_value EQUAL 126)
+        set(HSTX_CLK_DIV 1)
+    else()
+        message(FATAL_ERROR
+            "Для HDMI_HSTX нужен CPU_MHZ, делящийся на 126 нацело "
+            "(126/252/378/504); получено ${_cpu_mhz_value}.")
+    endif()
+    message(STATUS "HDMI_HSTX: clk_sys=${_cpu_mhz_value} MHz, "
+            "MODE_HSTX_CLK_DIV=${HSTX_CLK_DIV}")
+endif()
+
+# Звук: по умолчанию идёт через драйвер audio_i2s (PIO). При
+# HDMI_HSTX мы подменяем i2s_init/i2s_out/i2s_deinit на свои из
+# drivers/hdmi_hstx/HDMI_hstx_audio.c — они кладут сэмплы в очередь
+# HDMI Data Islands вместо PIO. Сам сабдиректорий audio_i2s
+# подключаем всегда: внутри его CMakeLists проверяет HDMI_HSTX и
+# при включённом HSTX исключает audio_i2s.c из сборки, чтобы не
+# было multiple-definition.
 add_subdirectory(drivers/audio_i2s)
 add_subdirectory(drivers/pico_fatfs)
 
@@ -203,14 +283,42 @@ endif()
 
 
 
-file(GLOB_RECURSE SRC 
+file(GLOB_RECURSE SRC
  "src/*.c"
  "src/*.h"
- "src/zx_emu/*.c" "src/zx_emu/*.h" 
- "src/zx_emu/rom/*.h" 
- "src/zx_emu/z80/*.h" 
+ "src/zx_emu/*.c" "src/zx_emu/*.h"
+ "src/zx_emu/rom/*.h"
+ "src/zx_emu/z80/*.h"
 "src/picobus/*.c"
 )
+
+# usb_serial_stubs.c пускаем в сборку только в режиме USB_SERIAL —
+# в обычном режиме он бы дал multiple-definition с usb_key.c.
+list(FILTER SRC EXCLUDE REGEX "/src/usb_serial_stubs\\.c$")
+
+# При HDMI_HSTX вместо src/HDMI.c подключаем драйвер из
+# drivers/hdmi_hstx. src/HDMI.h оставляем как есть — там
+# tab_color[], которая нужна обоим путям.
+if(HDMI_HSTX)
+    list(FILTER SRC EXCLUDE REGEX "/src/HDMI\\.c$")
+    list(APPEND SRC
+        ${CMAKE_CURRENT_SOURCE_DIR}/drivers/hdmi_hstx/HDMI_hstx.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/drivers/hdmi_hstx/HDMI_hstx_audio.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/drivers/hdmi_hstx/video_output.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/drivers/hdmi_hstx/hstx_packet.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/drivers/hdmi_hstx/hstx_data_island_queue.c
+    )
+endif()
+
+# В режиме USB_SERIAL отключаем USB HID-хост: убираем usb_key.c,
+# xinput_host.c (требуют tinyusb_host) и подсовываем заглушки,
+# реализующие минимальный API (init_usb_hid, tuh_task, decode_key).
+if(USB_SERIAL)
+    list(FILTER SRC EXCLUDE REGEX "/src/usb_key\\.c$")
+    list(FILTER SRC EXCLUDE REGEX "/src/xinput_host\\.c$")
+    list(APPEND SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/usb_serial_stubs.c)
+endif()
+
 message(STATUS "Add source files:")
 foreach (SRC_FILE IN LISTS SRC)
     message(STATUS "${SRC_FILE}")
@@ -218,6 +326,26 @@ endforeach ()
 message(STATUS "")
 
 add_executable(${PROJECT_NAME} ${SRC})
+
+if(HDMI_HSTX)
+    target_include_directories(${PROJECT_NAME} PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/drivers/hdmi_hstx
+        ${CMAKE_CURRENT_SOURCE_DIR}/drivers/audio_i2s
+    )
+    target_compile_definitions(${PROJECT_NAME} PRIVATE
+        HDMI_HSTX=1
+        MODE_HSTX_CLK_DIV=${HSTX_CLK_DIV}
+        # Полярность дифпар приёмника. PCB M2 разводит CLK- на GPIO12
+        # (чётный), CLK+ на GPIO13 (нечётный). Ветка драйвера по
+        # умолчанию (без HSTX_INVERT_DIFFPAIRS) укладывает полярность
+        # ровно так — оставляем как есть; включение этого флага
+        # инвертирует все линии и сломает HDMI.
+    )
+endif()
+
+if(USB_SERIAL)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE USB_SERIAL=1)
+endif()
 
 
 
@@ -241,7 +369,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/s
 ###################################################
 target_compile_definitions(${PROJECT_NAME} PRIVATE
 ## Номер версии конфигурационного файла
-CONFIG_VERSION=290433
+CONFIG_VERSION=160526
 CPU_KHZ=CPU_MHZ*1000
 PICOBUS_SPEED=20   #// 160000000 = 20MB/s // 80000000 = 10MB/s
 POWER_MODE_WEACT=1
@@ -304,8 +432,8 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
 
 MURM1
 LED_BOARD=25
-VOLTAGE_RUN=VREG_VOLTAGE_1_40
-VOLTAGE_WORK=VREG_VOLTAGE_1_40
+VOLTAGE_RUN=VREG_VOLTAGE_1_30
+VOLTAGE_WORK=VREG_VOLTAGE_1_30
 #########################################################################
 ##PicoBus ONLY GENERAL SOUND
 PBUS_OUT_PIN=26
@@ -411,12 +539,12 @@ set (M_VERSION m2)# версия платы
 target_compile_definitions(${PROJECT_NAME} PRIVATE
 MURM2
 LED_BOARD=25
-VOLTAGE_RUN=VREG_VOLTAGE_1_40
-VOLTAGE_WORK=VREG_VOLTAGE_1_40
+VOLTAGE_RUN=VREG_VOLTAGE_1_30
+VOLTAGE_WORK=VREG_VOLTAGE_1_30
 
 ##PicoBus ONLY GENERAL SOUND
-PBUS_OUT_PIN=10
-PBUS_IN_PIN=11
+PBUS_OUT_PIN=11
+PBUS_IN_PIN=10
 PBUS_PIO=pio0   #only pio 0
 ## Beep
 BEEP_PIN=9  # на IN
@@ -598,7 +726,115 @@ DELAY_JOY=200 #задержка NES JOY
 )
 endif()
 ###############################################
+#######################################################
+#    WS_ZERO1 Wave Share Zero1  2026.05.02 
+#    PIO 0 I2S or HARD_AY_595 SM 0 SM FREE 1,2,3
+#    PIO 1 PS/2 (2) and VIDEO  TFT (0 1) PSRAM_BOARD(SM=3)
+#######################################################
+if( ${M_BOARD} MATCHES "WS_ZERO1")
+set (M_VERSION z0)# версия платы
+target_compile_definitions(${PROJECT_NAME} PRIVATE
 
+WS_ZERO1
+HDMI_ONLY # только HDMI
+LED_BOARD=255  # 255 светодиод не подключен
+VOLTAGE_RUN=VREG_VOLTAGE_1_30
+VOLTAGE_WORK=VREG_VOLTAGE_1_30
+#########################################################################
+##PicoBus ONLY GENERAL SOUND
+PBUS_OUT_PIN=26
+PBUS_IN_PIN=27
+PBUS_PIO=pio0   #only pio 0
+## Beep
+BEEP_PIN=28  # на IN
+#######################################################################
+
+#PS/2 клавиатура
+beginPS2_PIN=0
+PIO_PS2=pio0
+SM_PS2=3 #  
+
+#VIDEO
+HDMI_PIN_ORDER_REVERSE
+beginVideo_PIN=22
+beginHDMI_PIN_data=22
+beginHDMI_PIN_clk=28
+# video pio1 и sm 2шт 
+PIO_VIDEO=pio1
+PIO_VIDEO_ADDR=pio1
+SM_VIDEO=0
+SM_CONV=1
+#
+#TFT
+PIO_SPI_TFT=pio1
+SM_SPI_TFT=0
+PIO_SPI_TFT_CONV=pio1
+SM_SPI_TFT_CONV=1
+
+TFT_CLK_PIN=22
+TFT_DATA_PIN=23
+TFT_RST_PIN=24
+TFT_DC_PIN=25
+TFT_CS_PIN=26
+TFT_LED_PIN=27
+
+##SDCARD
+SDCARD_SPI_BUS=spi0
+SDCARD_PIN_CS=21
+SDCARD_PIN_SCK=18
+SDCARD_PIN_MOSI=19
+SDCARD_PIN_MISO=20
+
+##PSRAM
+PSRAM_DIV=2.0 #  1.4 // делитель частоты psram если 315 то 1.4 если меньше то 1.0
+PIO_PSRAM=pio1 
+SM_PSRAM=3  # критично при отключении pio  программы
+# PSRAM_MUTEX=1
+PSRAM_SPINLOCK=1
+PSRAM_ASYNC
+PSRAM_PIN_CS=18
+PSRAM_PIN_SCK=19
+PSRAM_PIN_MOSI=20
+PSRAM_PIN_MISO=21
+PSRAM_BUTTER_PIN_CS=19 #это PSRAM_PIN_CS для платы murm1 psram бутерброд
+##AUDIO PWM
+ZX_AY_PWM_R=10 
+ZX_AY_PWM_L=11 
+ZX_BEEP_PIN=12 
+BEEP_PWM_WRAP=1000 # ШИМ 
+AY_PWM_WRAP=4000 # ШИМ 
+MAX_VOL_PWM=100
+DEFAULT_VOLUME_PWM=50
+BEEP=12 # бипер микшируется в PWM R/L  или на gpio
+
+#BEEP=1 #вывод звук бипера на отдельный шим
+##AUDIO 595  hard AY 
+PIO_AY595=pio0 
+SM_AY595=0 
+CLK_AY_PIN=29 # CLK_AY_PIN=21
+CLK_LATCH_595_BASE_PIN=26 # и 27 
+DATA_595_PIN=28
+##AUDIO i2s
+I2S_DATA_PIN=10
+I2S_CLK_BASE_PIN=11
+I2S_FREQ=111111 ##111111 Hz
+PIO_I2S=pio0 # Only  pio0 !
+SM_I2S=0
+DEFAULT_VOLUME_I2S=50
+AUDIO_BUSTER_DEFAULT=1
+
+PIN_ZX_LOAD=17
+
+# NES JOY
+D_JOY_DATA_PIN=7
+D_JOY_CLK_PIN=8
+D_JOY_LATCH_PIN=9
+
+DELAY_JOY=200 #задержка NES JOY
+DELAY_KEY=127 #задержка USB keyboard
+
+)
+endif()
 #######################################################
 #    WS_ZERO2 Wave Share Zero2  2025.09.16 
 #    PIO 1    I2S  PS/2
@@ -931,6 +1167,110 @@ DELAY_KEY=127 #задержка USB keyboard
 
 )
 endif()
+#######################################################
+#    GENERAL SOUND M2
+#    PIO 0 I2S or HARD_AY_595 SM 0 SM FREE 1,2,3
+#    PIO 1 PS/2 (2) and VIDEO  TFT (0 1) PSRAM_BOARD(SM=3) - нет
+#######################################################
+if( ${M_BOARD} MATCHES "GSP_M2")
+set (M_VERSION m2)# версия платы
+target_compile_definitions(${PROJECT_NAME} PRIVATE
+MURM2
+LED_BOARD=25
+VOLTAGE_RUN=VREG_VOLTAGE_1_30
+VOLTAGE_WORK=VREG_VOLTAGE_1_30
+#########################################################################
+##PicoBus ONLY GENERAL SOUND
+PBUS_OUT_PIN=10
+PBUS_IN_PIN=11
+PBUS_PIO=pio0   #only pio 0
+## Beep
+BEEP_PIN=9  #  # на IN
+#######################################################################
+
+#PS/2 клавиатура
+beginPS2_PIN=2
+PIO_PS2=pio1 
+SM_PS2=3 # 
+
+#VIDEO
+beginVideo_PIN=12
+
+beginHDMI_PIN_data=beginVideo_PIN+2
+beginHDMI_PIN_clk=beginVideo_PIN
+
+PIO_VIDEO=pio1
+PIO_VIDEO_ADDR=pio1
+SM_VIDEO=0
+SM_CONV=1
+
+
+#
+#TFT
+PIO_SPI_TFT=pio1
+SM_SPI_TFT=0
+PIO_SPI_TFT_CONV=pio1
+SM_SPI_TFT_CONV=1
+
+TFT_CLK_PIN=19
+TFT_DATA_PIN=18
+TFT_RST_PIN=14
+TFT_DC_PIN=16
+TFT_CS_PIN=12
+TFT_LED_PIN=15
+
+##SDCARD
+SDCARD_SPI_BUS=spi0
+SDCARD_PIN_CS=5
+SDCARD_PIN_SCK=6
+SDCARD_PIN_MOSI=7
+SDCARD_PIN_MISO=4
+
+##PSRAM
+PSRAM_DIV=2.0 #  1.4 // делитель частоты psram если 315 то 1.4 если меньше то 1.0
+PSRAM_BUTTER_PIN_CS=8
+
+##AUDIO PWM
+##ZX_AY_PWM_R=10
+##ZX_AY_PWM_L=11
+ZX_BEEP_PIN=9 ## не используется
+##BEEP_PWM_WRAP=1000 # ШИМ 
+##AY_PWM_WRAP=4000 # ШИМ 
+MAX_VOL_PWM=100 ## не используется
+ DEFAULT_VOLUME_PWM=50 ## не используется
+##BEEP=12 # бипер микшируется в PWM R/L 
+#BEEP=0# вывод звук бипера на пин классика ШИМ на плате MURM2 портит звук Soft AY
+#BEEP=1 #вывод звук бипера на отдельный шим
+##AUDIO 595  hard AY 
+##PIO_AY595=pio0 
+##SM_AY595=0  
+##CLK_AY_PIN=29 # CLK_AY_PIN=21
+##CLK_LATCH_595_BASE_PIN=10 # и 11
+##DATA_595_PIN=9
+
+##AUDIO i2s
+##I2S_DATA_PIN=9
+##I2S_CLK_BASE_PIN=10
+##I2S_FREQ=111111 ##111111 #48000
+##PIO_I2S=pio0
+##SM_I2S=0
+DEFAULT_VOLUME_I2S=50
+AUDIO_BUSTER_DEFAULT=0
+
+PIN_ZX_LOAD=22
+
+
+# NES JOY
+D_JOY_DATA_PIN=26
+D_JOY_CLK_PIN=20
+D_JOY_LATCH_PIN=21
+
+DELAY_KEY=127 #задержка USB keyboard
+DELAY_JOY=200 #задержка NES JOY
+
+)
+endif()
+
 ###############################################
 if( ${PICO_PLATFORM} MATCHES "rp2040")
 set (P_VERSION p1)# версия чипа 
@@ -997,6 +1337,24 @@ endif()
             message("Конфигурация: MURM2 + PICO_RP2350 (PSRAM_BUTTER)")
         endif()
     endif()
+
+###################### PSRAM для SPECCY GSP M2 #################################
+        if( ${M_BOARD} MATCHES "GSP_M2")
+            if( ${PICO_PLATFORM} MATCHES "rp2040")
+            target_compile_definitions(${PROJECT_NAME} PRIVATE 
+            PSRAM_NOSUPORT
+            )
+            message("Конфигурация: SPECCY GSP M2 + PICO_RP2040 (NO_PSRAM)")
+        
+        elseif( ${PICO_PLATFORM} MATCHES "rp2350")
+            target_compile_definitions(${PROJECT_NAME} PRIVATE 
+           PSRAM_BUTTER
+           ## NO_PSRAM
+            )
+            message("Конфигурация: SPECCY GSP M2 + PICO_RP2350 (PSRAM_BUTTER)")
+        endif()
+    endif()
+
 ########### PSRAM для PI CARD ###########################################
    if( ${M_BOARD} MATCHES "PI_CARD")
             target_compile_definitions(${PROJECT_NAME} PRIVATE 
@@ -1004,8 +1362,16 @@ endif()
             )
             message("Конфигурация: PI CARD + PICO_RP2350 (PSRAM_BUTTER)")
         endif()
-#########################################################################      
-########### PSRAM для WS ZERO ###########################################
+######################################################################### 
+########### PSRAM для WS ZERO 1 #########################################
+   if( ${M_BOARD} MATCHES "WS_ZERO1")
+            target_compile_definitions(${PROJECT_NAME} PRIVATE 
+            PSRAM_NOSUPORT
+            )
+            message("Конфигурация: WS_ZERO1 + PICO_RP2040 (NO_PSRAM)")
+        endif()
+######################################################################### 
+########### PSRAM для WS ZERO 2 #########################################
    if( ${M_BOARD} MATCHES "WS_ZERO2")
             target_compile_definitions(${PROJECT_NAME} PRIVATE 
             PSRAM_BUTTER
@@ -1039,6 +1405,11 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
 )
 endif()
 
+if( ${M_BOARD} MATCHES "WS_ZERO1")
+target_compile_definitions(${PROJECT_NAME} PRIVATE
+    FW_VERSION="${PORT_VERSION} [z0p1]"
+)
+endif()
 
 if( ${M_BOARD} MATCHES "WS_ZERO2")
 target_compile_definitions(${PROJECT_NAME} PRIVATE
@@ -1070,6 +1441,12 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
 )
 endif()
 
+if( ${M_BOARD} MATCHES "GSP_M2")
+target_compile_definitions(${PROJECT_NAME} PRIVATE
+    FW_VERSION="${PORT_VERSION} [gs m2]"
+)
+endif()
+
 #SET(BUILD_NAME "${PROJECT_NAME}_${PORT_VERSION}_${M_VERSION}${P_VERSION}_${VOUT}")
 # Модифицируем BUILD_NAME:
  
@@ -1080,27 +1457,22 @@ else()
 endif()
 
 if(DEBUG)
-#    SET(BUILD_NAME "${PROJECT_NAME}")
+    SET(BUILD_NAME "${PROJECT_NAME}")
     
-    # 
-#pico_enable_stdio_usb(${PROJECT_NAME} 0)
-#pico_enable_stdio_uart(${PROJECT_NAME} 1)
-
 
 endif()
 
 
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "${BUILD_NAME}")
 
-
+# Условная линковка библиотек
 target_link_libraries(${PROJECT_NAME} PRIVATE
- 
         pico_runtime
         pico_stdlib
         pico_multicore
         hardware_dma
         hardware_pio
-        hardware_i2c
+     #   hardware_i2c
         hardware_spi
         hardware_interp
         hardware_timer
@@ -1109,9 +1481,17 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
         hardware_flash
        tinyusb_host 
        tinyusb_board
-       audio_i2s
+      # audio_i2s
        pico_fatfs
 )
+
+# Условная линковка библиотек
+if(GENERAL_SOUND)
+else()
+target_link_libraries(${PROJECT_NAME} PRIVATE
+        audio_i2s
+)
+endif()
 
 # Условная линковка библиотек
 if(${M_BOARD} MATCHES "MURM1")
@@ -1127,6 +1507,33 @@ if(${M_BOARD} MATCHES "WS_ZERO2" AND PCM5122)
         pcm5122
     )
 endif()
+
+# USB-стек: по умолчанию TinyUSB Host (для USB-клавиатуры/джойстика);
+# при USB_SERIAL=ON — CDC-консоль из pico_stdio_usb. В CDC-режиме
+# TinyUSB Host не линкуется вообще, чтобы он не конфликтовал с CDC
+# device-стеком Pico SDK на том же root-порту.
+if(USB_SERIAL)
+    pico_enable_stdio_usb(${PROJECT_NAME} 1)
+    pico_enable_stdio_uart(${PROJECT_NAME} 0)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE
+        # Не блокируемся в ожидании коннекта терминала — иначе при
+        # отсутствии хоста мы вообще не выходим из stdio_init_all().
+        PICO_STDIO_USB_CONNECT_WAIT_TIMEOUT_MS=0
+        # Отключаем vendor reset interface (USB_RESET_INTERFACE),
+        # чтобы устройство было pure CDC (bDeviceClass=02), иначе
+        # macOS Sonoma+ не подцепляет AppleUSBCDCACMData driver
+        # и /dev/cu.usbmodem* не появляется.
+        PICO_STDIO_USB_ENABLE_RESET_VIA_VENDOR_INTERFACE=0
+        PICO_STDIO_USB_RESET_BOOTSEL_INTERFACE_DISABLE_MASK=0
+    )
+else()
+    target_link_libraries(${PROJECT_NAME} PRIVATE
+        tinyusb_host
+        tinyusb_board
+    )
+endif()
+
+
 
 
 
