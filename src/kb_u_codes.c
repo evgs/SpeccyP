@@ -122,19 +122,6 @@ const KeyDef kbdUS [] = {
 
     0xff,0xff, 0,0, 0,0,        //END OF TABLE
 };
-#define KB_U3_ (1<<0)
-#define KB_U3_F1 (1<<1)
-#define KB_U3_F2 (1<<2)
-#define KB_U3_F3 (1<<3)
-#define KB_U3_F4 (1<<4)
-#define KB_U3_F5 (1<<5)
-#define KB_U3_F6 (1<<6)
-#define KB_U3_F7 (1<<7)
-#define KB_U3_F8 (1<<8)
-#define KB_U3_F9 (1<<9)
-#define KB_U3_F10 (1<<10)
-#define KB_U3_F11 (1<<11)
-#define KB_U3_F12 (1<<12)
 
 void keys_to_str(char* str_buf,char s_char,kb_u_state kb_state)
 {
