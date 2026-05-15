@@ -6,6 +6,137 @@ typedef struct kb_u_state
 
 }kb_u_state;
 
+
+#define KB_U0_A_POS (0)
+#define KB_U0_B_POS (1)
+#define KB_U0_C_POS (2)
+#define KB_U0_D_POS (3)
+#define KB_U0_E_POS (4)
+#define KB_U0_F_POS (5)
+#define KB_U0_G_POS (6)
+#define KB_U0_H_POS (7)
+#define KB_U0_I_POS (8)
+#define KB_U0_J_POS (9)
+#define KB_U0_K_POS (10)
+#define KB_U0_L_POS (11)
+#define KB_U0_M_POS (12)
+#define KB_U0_N_POS (13)
+#define KB_U0_O_POS (14)
+#define KB_U0_P_POS (15)
+#define KB_U0_Q_POS (16)
+#define KB_U0_R_POS (17)
+#define KB_U0_S_POS (18)
+#define KB_U0_T_POS (19)
+#define KB_U0_U_POS (20)
+#define KB_U0_V_POS (21)
+#define KB_U0_W_POS (22)
+#define KB_U0_X_POS (23)
+#define KB_U0_Y_POS (24)
+#define KB_U0_Z_POS (25)
+
+#define KB_U0_SEMICOLON_POS (26)
+#define KB_U0_QUOTE_POS (27)
+#define KB_U0_COMMA_POS (28)
+#define KB_U0_PERIOD_POS (29)
+#define KB_U0_LEFT_BR_POS (30)
+#define KB_U0_RIGHT_BR_POS (31)
+
+// блок 1 цифры и контролы
+
+
+#define KB_U1_0_POS (0)
+#define KB_U1_1_POS (1)
+#define KB_U1_2_POS (2)
+#define KB_U1_3_POS (3)
+#define KB_U1_4_POS (4)
+#define KB_U1_5_POS (5)
+#define KB_U1_6_POS (6)
+#define KB_U1_7_POS (7)
+#define KB_U1_8_POS (8)
+#define KB_U1_9_POS (9)
+
+#define KB_U1_ENTER_POS (10)
+#define KB_U1_SLASH_POS (11)
+#define KB_U1_MINUS_POS (12)
+
+#define KB_U1_EQUALS_POS    (13)
+#define KB_U1_BACKSLASH_POS (14)
+#define KB_U1_CAPS_LOCK_POS (15)
+#define KB_U1_TAB_POS       (16)
+#define KB_U1_BACK_SPACE_POS (17)
+#define KB_U1_ESC_POS       (18)
+#define KB_U1_TILDE_POS     (19)
+#define KB_U1_MENU_POS      (20)
+
+#define KB_U1_L_SHIFT_POS   (21)
+#define KB_U1_L_CTRL_POS    (22)
+#define KB_U1_L_ALT_POS     (23)
+#define KB_U1_L_WIN_POS     (24)
+#define KB_U1_R_SHIFT_POS   (25)
+#define KB_U1_R_CTRL_POS    (26)
+#define KB_U1_R_ALT_POS     (27)
+#define KB_U1_R_WIN_POS     (28)
+#define KB_U1_SPACE_POS     (29)
+
+#define KB_U2_NUM_0_POS (0)
+#define KB_U2_NUM_1_POS (1)
+#define KB_U2_NUM_2_POS (2)
+#define KB_U2_NUM_3_POS (3)
+#define KB_U2_NUM_4_POS (4)
+#define KB_U2_NUM_5_POS (5)
+#define KB_U2_NUM_6_POS (6)
+#define KB_U2_NUM_7_POS (7)
+#define KB_U2_NUM_8_POS (8)
+#define KB_U2_NUM_9_POS (9)
+
+#define KB_U2_NUM_ENTER_POS (10)
+#define KB_U2_NUM_SLASH_POS (11)
+#define KB_U2_NUM_MINUS_POS (12)
+
+#define KB_U2_NUM_PLUS_POS (13)
+#define KB_U2_NUM_MULT_POS (14)
+#define KB_U2_NUM_PERIOD_POS  (15)
+#define KB_U2_NUM_LOCK_POS (16)
+
+
+#define KB_U2_DELETE_POS (17)
+
+
+#define KB_U2_SCROLL_LOCK_POS   (18)
+#define KB_U2_PAUSE_BREAK_POS   (19)
+#define KB_U2_INSERT_POS        (20)
+#define KB_U2_HOME_POS          (21)
+#define KB_U2_PAGE_UP_POS       (22)
+#define KB_U2_PAGE_DOWN_POS     (23)
+
+#define KB_U2_PRT_SCR_POS       (24)
+#define KB_U2_END_POS           (25)
+#define KB_U2_UP_POS            (26)
+#define KB_U2_DOWN_POS          (27)
+#define KB_U2_LEFT_POS          (28)
+#define KB_U2_RIGHT_POS         (29)
+
+// блок 3 F клавиши и прочие допы
+
+
+#define KB_U3__POS   (0)
+#define KB_U3_F1_POS (1)
+#define KB_U3_F2_POS (2)
+#define KB_U3_F3_POS (3)
+#define KB_U3_F4_POS (4)
+#define KB_U3_F5_POS (5)
+#define KB_U3_F6_POS (6)
+#define KB_U3_F7_POS (7)
+#define KB_U3_F8_POS (8)
+#define KB_U3_F9_POS (9)
+#define KB_U3_F10_POS (10)
+#define KB_U3_F11_POS (11)
+#define KB_U3_F12_POS (12)
+
+
+
+///////////////////////////////////////
+
 // блок 0 буквы
 #define KB_U0_A (1<<0)
 #define KB_U0_B (1<<1)
