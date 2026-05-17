@@ -2986,6 +2986,8 @@ void init_mashine_and_extram(uint8_t config_mashine) // инициализаци
     conf.shift_img=12582;
     select_cpu_z80(z1);
 
+    setZxExtKeysDefault();
+
 	switch (config_mashine)
 	{
 	case PENT128 :

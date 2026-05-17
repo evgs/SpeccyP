@@ -276,5 +276,7 @@ void convert_kb_u_to_kb_zx(kb_u_state* kb_st,uint8_t* zx_kb);
 //для тестирования
 void keys_to_str(char* str_buf,char s_char,kb_u_state kb_state);
 
-void kb_enableAccords(bool enable);
-bool kb_getAccords();
+//
+typedef void (*ConvertKbStateToZxHook)(kb_u_state* kbState, uint8_t* zxKb);
+void setZxExtKeysHook(ConvertKbStateToZxHook customExtKeysConverter);
+void setZxExtKeysDefault();

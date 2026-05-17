@@ -3,13 +3,21 @@
 #include "kb_u_codes.h"
 #include "string.h"
 
+
+//Default accords translator
+void convert_kb_accords(kb_u_state* kb_st,uint8_t* zx_kb);
+
 //translate keys outside of standard ZX keyboard by accords
 // for example, ';' map to SS+O
-static bool accordsEmulation = true;
+static ConvertKbStateToZxHook extKeysConverter = convert_kb_accords;
 
-void kb_enableAccords(bool enable);
-bool kb_getAccords();
-void convert_kb_accords(kb_u_state* kb_st,uint8_t* zx_kb);
+void setZxExtKeysHook(ConvertKbStateToZxHook customExtKeysConverter) {
+    extKeysConverter = customExtKeysConverter;
+}
+
+void setZxExtKeysDefault() {
+    setZxExtKeysHook(convert_kb_accords);
+}
 
 typedef struct {
     const char u, n;
@@ -341,7 +349,7 @@ void convert_kb_u_to_kb_zx(kb_u_state* kb_st,uint8_t* zx_kb)
             if (u2 & KB_U2_END) {};
     }
 
-    if (kb_enableAccords) convert_kb_accords(kb_st, zx_kb);
+    if (extKeysConverter) extKeysConverter(kb_st, zx_kb);
 
 };
 
