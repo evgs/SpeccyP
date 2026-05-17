@@ -36,7 +36,7 @@ endfunction()
 # Устанавливаем параметры платы и чипа и так далее
 set(PICO_BOARD pico2 CACHE STRING "Board type")
 
-set(DEBUG ON)
+#set(DEBUG ON)
 
 # == Конфигурация  SpeccyP ==
 set (BASE_VERSION "1.6.3 ${GIT_VERSION}")
