@@ -31,6 +31,25 @@ extern ZX_Input_t zx_input;
 void trdos_out(uint8_t port, uint8_t val);
 extern uint8_t wd1793_PortFF;
 
+uint8_t qu_ExtKb[8];
+
+uint8_t QuorumExtKeyboardDecode(uint8_t portH) {
+    uint8_t result = 0;
+    uint8_t *bp = qu_ExtKb;
+    portH = ~portH;
+
+    if (portH & (1<<0)) result |= bp[0]; 
+    if (portH & (1<<1)) result |= bp[1]; 
+    if (portH & (1<<2)) result |= bp[2]; 
+    if (portH & (1<<3)) result |= bp[3]; 
+    if (portH & (1<<4)) result |= bp[4]; 
+    if (portH & (1<<5)) result |= bp[5]; 
+    if (portH & (1<<6)) result |= bp[6]; 
+    if (portH & (1<<7)) result |= bp[7];
+
+    return ~result; 
+}
+
 #ifdef MURM1
 #include "psram_spi.h"
 #endif
@@ -236,9 +255,9 @@ inline static uint8_t fast(in_z80quorum)(Machine *self, uint16_t port16) {
     {   
         // 0xXX7e - extended keyboard
         if (portL == 0x7e) {
-            uint8_t value = 0x3f; //TODO keys
+            uint8_t value = QuorumExtKeyboardDecode(portH) & 0x3f; //TODO keys
             if (zx_7ffd_lastOut & (1<<3)) value |= 0x80;    // screen bit readout
-            if (zx_0000_lastOut & (1<<3)) value |= 0x60;    // RAM_8 bit readout
+            if (zx_0000_lastOut & (1<<3)) value |= 0x40;    // RAM_8 bit readout
             return value; 
         }
 		//загрузка с магнитофона и опрос клавиатуры
@@ -336,6 +355,87 @@ inline static void fast(out_z80quorum)(Machine *self, uint16_t port16, uint8_t v
 }
 // end Quorum_1024
 
+#define KA8  (0 )
+#define KA9  (1 )
+#define KA10 (2)
+#define KA11 (3)
+#define KA12 (4)
+#define KA13 (5)
+#define KA14 (6)
+#define KA15 (7)
+#define SET_EXT_KEY(AX, DX) (qu_ExtKb[AX] |= (1<<DX))
+#define SET_ZX_KEY(AX, DX) (zx_kb[AX] |= (1<<DX))
+#define CLR_ZX_KEY(AX, DX) (zx_kb[AX] &= ~(1<<DX))
+
+void convertQuorumKbAccords(kb_u_state* kb_st,uint8_t* zx_kb) 
+{
+    //fast fill array with zero
+    // *((uint32_t*)(qu_ExtKb)) = 0;
+    // *((uint32_t*)(qu_ExtKb+4)) = 0;
+
+    // memset also optimizes small array fill, code will be equivalent to shown upper
+    memset(qu_ExtKb, 0, sizeof(qu_ExtKb) / sizeof(char));
+
+    uint32_t u0 = kb_st->u[0];
+    if (u0) {
+        if (u0 & KB_U0_SEMICOLON) {SET_EXT_KEY(KA13, 0); };
+        if (u0 & KB_U0_QUOTE)     {SET_EXT_KEY(KA9,  4); };
+        if (u0 & KB_U0_COMMA)     {SET_EXT_KEY(KA14, 0); };
+        if (u0 & KB_U0_PERIOD)    {SET_EXT_KEY(KA8,  5); };
+        if (u0 & KB_U0_LEFT_BR)   {SET_EXT_KEY(KA13, 5); };
+        if (u0 & KB_U0_RIGHT_BR)  {SET_EXT_KEY(KA13, 4); };
+    }
+
+    uint32_t u1 = kb_st->u[1];
+    if (u1) {
+        if (u1 & KB_U1_SLASH)     {SET_EXT_KEY(KA14, 4); };
+        if (u1 & KB_U1_MINUS)     {SET_EXT_KEY(KA12, 0); };
+
+        if (u1 & KB_U1_EQUALS)    {SET_EXT_KEY(KA12, 2); };
+        if (u1 & KB_U1_BACKSLASH) {SET_EXT_KEY(KA13, 2); };
+        if (u1 & KB_U1_CAPS_LOCK) {SET_EXT_KEY(KA9,  0); };
+        if (u1 & KB_U1_TAB)       {SET_EXT_KEY(KA10, 0); };
+        if (u1 & KB_U1_BACK_SPACE) {SET_EXT_KEY(KA11, 2); };
+        if (u1 & KB_U1_ESC)       {SET_EXT_KEY(KA11, 0); };
+        if (u1 & KB_U1_TILDE)     {SET_EXT_KEY(KA9,  2); };
+        //if (u1 & KB_U1_MENU) {};
+
+        if (u1 & (KB_U1_L_ALT | KB_U1_R_ALT | KB_U1_L_WIN | KB_U1_R_WIN)) {
+            // F-KEYS and RUS/LAT
+            if (u1 & KB_U1_1) {SET_EXT_KEY(KA15,  1); CLR_ZX_KEY(KA11, 0); }    // Quorum F1
+            if (u1 & KB_U1_2) {SET_EXT_KEY(KA9,   1); CLR_ZX_KEY(KA11, 1);}    // Quorum F2
+            if (u1 & KB_U1_3) {SET_EXT_KEY(KA13,  1); CLR_ZX_KEY(KA11, 2);}    // Quorum F3
+            if (u1 & KB_U1_4) {SET_EXT_KEY(KA10,  1); CLR_ZX_KEY(KA11, 3);}    // Quorum F4
+            if (u1 & KB_U1_5) {SET_EXT_KEY(KA11,  1); CLR_ZX_KEY(KA11, 4);}    // Quorum F5
+            if (u1 & KB_U1_6) {SET_EXT_KEY(KA12,  5); CLR_ZX_KEY(KA11, 5);}    // Quorum F6/G
+
+            if (u1 & KB_U1_9) {SET_EXT_KEY(KA8,   0); CLR_ZX_KEY(KA12, 1);}    // Quorum RUS
+            if (u1 & KB_U1_0) {SET_EXT_KEY(KA8,   1); CLR_ZX_KEY(KA12, 0);}    // Quorum LAT
+        }
+    }
+
+    uint32_t u2 = kb_st->u[2];
+    if (u2) {
+        if (u2 & KB_U2_DELETE)      {SET_EXT_KEY(KA12, 3); };
+        if (u2 & KB_U2_NUM_0)       {SET_EXT_KEY(KA15, 3); };
+        if (u2 & KB_U2_NUM_1)       {SET_EXT_KEY(KA8,  3); };
+        if (u2 & KB_U2_NUM_2)       {SET_EXT_KEY(KA8,  4); };
+        if (u2 & KB_U2_NUM_3)       {SET_EXT_KEY(KA14, 5); };
+        if (u2 & KB_U2_NUM_4)       {SET_EXT_KEY(KA9,  3); };
+        if (u2 & KB_U2_NUM_5)       {SET_EXT_KEY(KA10, 4); };
+        if (u2 & KB_U2_NUM_6)       {SET_EXT_KEY(KA9,  5); };
+        if (u2 & KB_U2_NUM_7)       {SET_EXT_KEY(KA10, 3); };
+        if (u2 & KB_U2_NUM_8)       {SET_EXT_KEY(KA11, 4); };
+        if (u2 & KB_U2_NUM_9)       {SET_EXT_KEY(KA10, 5); };
+        if (u2 & KB_U2_NUM_ENTER)   {zx_kb[6]|=1<<0;};
+        if (u2 & KB_U2_NUM_SLASH)   {SET_EXT_KEY(KA11, 3); };
+        if (u2 & KB_U2_NUM_MINUS)   {SET_EXT_KEY(KA11, 5); };
+        if (u2 & KB_U2_NUM_PLUS)    {SET_EXT_KEY(KA15, 5); };
+        if (u2 & KB_U2_NUM_PERIOD)  {SET_EXT_KEY(KA15, 4); };
+        if (u2 & KB_U2_NUM_MULT)    {SET_EXT_KEY(KA12, 4); };   // F8 на схеме?
+    }
+
+}
 
 void machine_Quorum1024(Machine *self) {
     self->cpu.context      = self;
@@ -371,4 +471,6 @@ void machine_Quorum1024(Machine *self) {
     
     pent_config = QUORUM1024;
     ticks_per_frame=71680 ;// 71680- Пентагон //70908 - 128 +2A // 70784 Scorpion
+
+    setZxExtKeysHook(convertQuorumKbAccords);
 }
