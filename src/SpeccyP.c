@@ -286,7 +286,7 @@ ZxMachineVariant __in_flash() variants[] =
     { " Navigator 256    ", true , NOVA256 },
     { " MurmoZavr 8000K  ", true , PENT8M },
     { " Pentagon 512CASH ", true , PENT_512CASH },
-    { " Quorum 1024       ", false , QUORUM1024 },
+    { " Quorum 1024      ", false , QUORUM1024 },
 }; 
 
 #define ZX_VARIANTS_TOTAL (sizeof(variants) / sizeof(ZxMachineVariant))
