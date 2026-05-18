@@ -206,11 +206,7 @@ extern ZX_Input_t zx_input;
         " Z80  reset    ",
         " Hard reset    ",
         " Power OFF     ",
- #ifndef MOS2
-        " Update mode   ",
- #else    
-        " Murmulator OS ", 
- #endif       
+        " Update mode   ",   
         " Exit          ",
         "               ",
         
@@ -233,11 +229,7 @@ extern ZX_Input_t zx_input;
 	" Z80  reset    ",
 	" Hard reset    ",
     " Power OFF     ",
- #ifndef MOS2
     " Update mode   ",
- #else    
-    " Murmulator OS ", 
-  #endif  
     " Exit          ",
 	"               ",
 	
@@ -874,13 +866,8 @@ vreg_set_voltage(conf.voltage);// установка напряжения из i
          vout_select= VIDEO_HDMI;
          startVIDEO(VIDEO_HDMI);// только HDMI
 #else 
-     //  conf.vout=video_filedetect();// определение видеовыхода по наличию определенного файла OLD!
          conf.hdmi_fdiv = HDMI_DIV;
          vout_select= video_select();// автоопределение
-
-       //   vout_select=VIDEO_TFT;
-       //  conf.tft=2; // 0-ili9341 1-st7789 2-ili9341 ips
- 
          startVIDEO(vout_select);     
 #endif 
 //
@@ -1088,7 +1075,7 @@ snprintf(temp_msg, sizeof temp_msg, "FLASH   %dMHz", real_flash_freq);
     #ifdef PICO_RP2350 
         snprintf(temp_msg, sizeof temp_msg, "  Ucpu   %.2fV ",table_voltage[conf.voltage]/ 100.0 ); 
       // snprintf(temp_msg, sizeof temp_msg, "  Ucpu  %d mV ",conf.voltage );
-        draw_text(204+XPOS,YPOS+10,temp_msg,CL_GRAY ,CL_BLACK); 
+        draw_text(210+XPOS,YPOS+10,temp_msg,CL_GRAY ,CL_BLACK); 
     #endif
 #if POWER_MODE_WEACT == 0
       //  draw_text(210+XPOS,YPOS+30,"MODE    PFM",CL_GRAY ,CL_BLACK); 
@@ -1103,6 +1090,7 @@ snprintf(temp_msg, sizeof temp_msg, "FLASH   %dMHz", real_flash_freq);
 // информация из setup
 draw_text(6+FONT_W,75+YPOS, getZxMachineVariant(conf.mashine)->name, CL_GRAY, CL_BLACK);
 
+#ifndef HDMI_HSTX
 #ifndef  GENERAL_SOUND     
 draw_text(6+FONT_W,85+YPOS,menu_sound[conf.type_sound],CL_GRAY,CL_BLACK);    
 #else 
@@ -1112,6 +1100,10 @@ draw_text(11+FONT_W,85+YPOS,"TurboSound + Z-Controller SD",CL_GRAY,CL_BLACK);
 draw_text(11+FONT_W,85+YPOS,"GeneralSound + TurboSound",CL_GRAY,CL_BLACK);   
 #endif 
 #endif
+#else
+draw_text(11+FONT_W,85+YPOS,"HDMI Audio",CL_GRAY,CL_BLACK); 
+#endif
+
 
 
 // дата и время компиляции
@@ -1119,37 +1111,6 @@ draw_text(11+FONT_W,85+YPOS,"GeneralSound + TurboSound",CL_GRAY,CL_BLACK);
 draw_text(12+FONT_W,110+YPOS,BUILD_DATE,CL_BLUE,CL_BLACK); 
 
 
-#ifdef MOS2
-#ifndef WS_ZERO2
-draw_text(70+FONT_W,110+YPOS,"Murmulator OS2 Edition",CL_BLUE,CL_BLACK); 
-#else
-draw_text(70+FONT_W,110+YPOS,"RP2350-PiZero MOS2",CL_BLUE,CL_BLACK); 
-#endif
-#endif
-
-#ifndef MOS2
-#ifdef WS_ZERO2
-draw_text(70+FONT_W,110+YPOS,"RP2350-PiZero",CL_BLUE,CL_BLACK); 
-#endif
-#endif
-
-#ifndef  GENERAL_SOUND   
-#ifndef  MOS2
-
-#ifdef  MURM2
-draw_text(70+FONT_W,110+YPOS,"Murmulator v2.x ",CL_BLUE,CL_BLACK); 
-#endif
-
-#ifdef  MURM1
-draw_text(70+FONT_W,110+YPOS,"Murmulator v1.x ",CL_BLUE,CL_BLACK); 
-#endif
-
-#ifdef  PI_CARD
-draw_text(70+FONT_W,110+YPOS,"PiCard v1.x ",CL_BLUE,CL_BLACK); 
-#endif
-
-#endif
-#endif
 
 if (vout_select==VIDEO_VGA)
         {
@@ -1160,8 +1121,13 @@ if (vout_select==VIDEO_VGA)
 
         if (vout_select==VIDEO_HDMI)
         {
+        #if defined(HDMI_HSTX) 
+        snprintf(temp_msg, sizeof temp_msg, "HDMI HSTX %dHz",(int) (CPU_MHZ*10/(42*conf.hdmi_fdiv)));  
+        draw_text(210+XPOS,YPOS+110,temp_msg,CL_BLUE ,CL_BLACK);
+        #else
         snprintf(temp_msg, sizeof temp_msg, "HDMI %dHz",(int) (CPU_MHZ*10/(42*conf.hdmi_fdiv)));  
         draw_text(240+XPOS,YPOS+110,temp_msg,CL_BLUE ,CL_BLACK);
+        #endif
         }
 
         if (vout_select==VIDEO_TFT)
@@ -2102,6 +2068,8 @@ void setup_zx(void)
 
       #ifdef GENERAL_SOUND
         draw_text(x1 + 126, y1 + 20+ M_SOUND*10, "GeneralSound + TS", CL_GRAY, CL_BLACK);
+      #elifdef HDMI_HSTX
+        draw_text(x1 + 126, y1 + 20+ M_SOUND*10, "HDMI Audio", CL_GRAY, CL_BLACK);
       #else  
         draw_text(x1 + 120, y1 + 20+ M_SOUND*10, menu_sound[conf.type_sound], CL_GRAY, CL_BLACK);
       #endif
@@ -2137,7 +2105,7 @@ void setup_zx(void)
             continue;
         }
 
-        #ifndef GENERAL_SOUND
+        #if !defined(GENERAL_SOUND) && !defined(HDMI_HSTX)
         if (numsetup == M_SOUND)
         {
             uint8_t x = MenuBox(90, 52, 16, 8, "Sound Seting", menu_sound, 8, conf.type_sound, 1);
@@ -2246,7 +2214,6 @@ if (numsetup == M_JOY)
         }
 
 //--------------
-#ifndef MOS2
         if (numsetup == M_UPDATE) // update mode
         {
             im_z80_stop = true;
@@ -2260,43 +2227,7 @@ if (numsetup == M_JOY)
            sleep_ms(256);
            reset_usb_boot(0, 0);
         }
-#else
-        if (numsetup == M_UPDATE) // Run Murmulator OS 
-        {
-            im_z80_stop = true;
-            is_menu_mode = true;
-
-            hardAY_on_off=0;
-           hardAY_off(); // off hard AY UPDATE
-
-           draw_img(0,0);
-           MessageBox("          Run Murmulator OS         ","", CL_WHITE, CL_RED, 0);
-           sleep_ms(256);
-
-           FIL f;
-           sprintf(temp_msg, "0:/.firmware");
-           int fd = f_open(&f, temp_msg, FA_READ);
-           if (fd != FR_OK)
-           {
-           f_close(&f);
-           draw_img(0,0);
-           MessageBox("                 RESET              ","", CL_WHITE, CL_RED, 0);
-           sleep_ms(256);
-           pico_reset(); // нет файла .firmware загрузка не под Murmulator OS
-           return;
-           }
-
-        //   draw_img(0,0);
-        //   MessageBox("          Run Murmulator OS         ","", CL_WHITE, CL_RED, 0);
-          // удаление файла "0:/.firmware"
-           fd = f_unlink(temp_msg);
-
-           sleep_ms(256);
-           f_close(&f);
-           pico_reset();
-           //reset_usb_boot(0, 0);
-        }
-#endif        
+      
 //--------------
         if (numsetup == M_EXIT) // Exit
         {
