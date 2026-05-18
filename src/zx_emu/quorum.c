@@ -395,14 +395,15 @@ void convertQuorumKbAccords(kb_u_state* kb_st,uint8_t* zx_kb)
         if (u1 & KB_U1_BACKSLASH) {SET_EXT_KEY(KA13, 2); };
         if (u1 & KB_U1_CAPS_LOCK) {SET_EXT_KEY(KA9,  0); };
         if (u1 & KB_U1_TAB)       {SET_EXT_KEY(KA10, 0); };
-        if (u1 & KB_U1_BACK_SPACE) {SET_EXT_KEY(KA11, 2); };
+        //if (u1 & KB_U1_BACK_SPACE) {SET_EXT_KEY(KA11, 2); };
+        if (u1 & KB_U1_BACK_SPACE) {SET_EXT_KEY(KA12, 3); };
         if (u1 & KB_U1_ESC)       {SET_EXT_KEY(KA11, 0); };
         if (u1 & KB_U1_TILDE)     {SET_EXT_KEY(KA9,  2); };
         //if (u1 & KB_U1_MENU) {};
 
         if (u1 & (KB_U1_L_ALT | KB_U1_R_ALT | KB_U1_L_WIN | KB_U1_R_WIN)) {
             // F-KEYS and RUS/LAT
-            if (u1 & KB_U1_1) {SET_EXT_KEY(KA15,  1); CLR_ZX_KEY(KA11, 0); }    // Quorum F1
+            if (u1 & KB_U1_1) {SET_EXT_KEY(KA15,  1); CLR_ZX_KEY(KA11, 0);}    // Quorum F1
             if (u1 & KB_U1_2) {SET_EXT_KEY(KA9,   1); CLR_ZX_KEY(KA11, 1);}    // Quorum F2
             if (u1 & KB_U1_3) {SET_EXT_KEY(KA13,  1); CLR_ZX_KEY(KA11, 2);}    // Quorum F3
             if (u1 & KB_U1_4) {SET_EXT_KEY(KA10,  1); CLR_ZX_KEY(KA11, 3);}    // Quorum F4
@@ -416,7 +417,8 @@ void convertQuorumKbAccords(kb_u_state* kb_st,uint8_t* zx_kb)
 
     uint32_t u2 = kb_st->u[2];
     if (u2) {
-        if (u2 & KB_U2_DELETE)      {SET_EXT_KEY(KA12, 3); };
+        //if (u2 & KB_U2_DELETE)      {SET_EXT_KEY(KA12, 3); };
+        if (u2 & KB_U2_DELETE)      {SET_EXT_KEY(KA11, 2); };
         if (u2 & KB_U2_NUM_0)       {SET_EXT_KEY(KA15, 3); };
         if (u2 & KB_U2_NUM_1)       {SET_EXT_KEY(KA8,  3); };
         if (u2 & KB_U2_NUM_2)       {SET_EXT_KEY(KA8,  4); };
