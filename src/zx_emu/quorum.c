@@ -408,7 +408,7 @@ void convertQuorumKbAccords(kb_u_state* kb_st,uint8_t* zx_kb)
             if (u1 & KB_U1_3) {SET_EXT_KEY(KA13,  1); CLR_ZX_KEY(KA11, 2);}    // Quorum F3
             if (u1 & KB_U1_4) {SET_EXT_KEY(KA10,  1); CLR_ZX_KEY(KA11, 3);}    // Quorum F4
             if (u1 & KB_U1_5) {SET_EXT_KEY(KA11,  1); CLR_ZX_KEY(KA11, 4);}    // Quorum F5
-            if (u1 & KB_U1_6) {SET_EXT_KEY(KA12,  5); CLR_ZX_KEY(KA11, 5);}    // Quorum F6/G
+            if (u1 & KB_U1_6) {SET_EXT_KEY(KA12,  5); CLR_ZX_KEY(KA12, 4);}    // Quorum F6/G
 
             if (u1 & KB_U1_9) {SET_EXT_KEY(KA8,   0); CLR_ZX_KEY(KA12, 1);}    // Quorum RUS
             if (u1 & KB_U1_0) {SET_EXT_KEY(KA8,   1); CLR_ZX_KEY(KA12, 0);}    // Quorum LAT
