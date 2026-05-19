@@ -1600,6 +1600,11 @@ int fast(main)(void){
                hardAY_off();
                MessageBox(" ZX SPECTRUM RESET ", "", CL_WHITE, CL_RED, 2);
 
+               //workaround to release CAPS SHIFT key and DEL key
+               kb_st_ps2.u[1] &= ~(KB_U1_L_CTRL | KB_U1_R_CTRL);
+               kb_st_ps2.u[2] &= ~(KB_U2_DELETE);
+               convert_kb_u_to_kb_zx(&kb_st_ps2, zx_input.kb_data);
+
                zx_machine_reset(3);
                im_z80_stop = false;
                is_menu_mode = false;
