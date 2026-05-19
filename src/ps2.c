@@ -114,6 +114,7 @@ const static __in_flash() uint8_t ps2Scans_NE0[] = {
         /* 0x10: */ 0xff,
         /* 0x11: */ BITINDEX(1, KB_U1_L_ALT_POS),
 		/* 0x12: */ BITINDEX(1, KB_U1_L_SHIFT_POS),
+        /* 0x13: */ 0xff,
 		/* 0x14: */ BITINDEX(1, KB_U1_L_CTRL_POS),
         /* 0x15: */ BITINDEX(0, KB_U0_Q_POS),
 		/* 0x16: */ BITINDEX(1, KB_U1_1_POS),
@@ -187,14 +188,13 @@ const static __in_flash() uint8_t ps2Scans_NE0[] = {
         /* 0x52: */ BITINDEX(0, KB_U0_QUOTE_POS),
         /* 0x53: */ 0xff,
 		/* 0x54: */ BITINDEX(0, KB_U0_LEFT_BR_POS),
-        /* 0x55: */ 0xff,
+		/* 0x55: */ BITINDEX(1, KB_U1_EQUALS_POS),
         /* 0x56: */ 0xff,
         /* 0x57: */ 0xff,
 
 
 		/* 0x58: */ BITINDEX(1, KB_U1_CAPS_LOCK_POS),
 		/* 0x59: */ BITINDEX(1, KB_U1_R_SHIFT_POS),
-		/* 0x55: */ BITINDEX(1, KB_U1_EQUALS_POS),
 		/* 0x5A: */ BITINDEX(1, KB_U1_ENTER_POS),
 		/* 0x5B: */ BITINDEX(0, KB_U0_RIGHT_BR_POS),
         /* 0x5c: */ 0xff,
