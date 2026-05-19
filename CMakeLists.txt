@@ -34,7 +34,7 @@ function(pico_generate_disassembly TARGET)
 endfunction()
 
 # Устанавливаем параметры платы и чипа и так далее
-set(PICO_BOARD pico2 CACHE STRING "Board type")
+set(PICO_BOARD pico2 CACHE STRING "Board type" FORCE)
 
 #set(DEBUG ON)
 
@@ -72,15 +72,12 @@ option(USB_SERIAL "USB CDC console (USB HID Host отключается)" OFF)
 ###
 # Определяем опции в зависимости от конфигурации 
 if(SPECCY_CONFIG STREQUAL "GSP_FULL")
-    set(SPECCY_CONFIG_DEFINITIONS 
-        
+    set(SPECCY_CONFIG_DEFINITIONS       
         CPU_MHZ=378 # 378 MHz
         FLASH_MAX_FREQ_MHZ=166
         PSRAM_MAX_FREQ_MHZ=166
         HDMI_DIV=1.5 # hdmi 60Hz
-
         TEST_DEBUG #
-
         GENERAL_SOUND 
         TURBOSOUND
         Z_CONTROLER
@@ -88,64 +85,29 @@ if(SPECCY_CONFIG STREQUAL "GSP_FULL")
     )
       set(GENERAL_SOUND ON)
 #
-elseif(SPECCY_CONFIG STREQUAL "GSP_M2")
-    set(SPECCY_CONFIG_DEFINITIONS 
-        
-        CPU_MHZ=378 # 378 MHz
-        FLASH_MAX_FREQ_MHZ=166
-        PSRAM_MAX_FREQ_MHZ=166
-        HDMI_DIV=1.5 # hdmi 60Hz
-
-        TEST_DEBUG #
-
-        GENERAL_SOUND 
-        TURBOSOUND
-        Z_CONTROLER
-        MIDI
-    )
-        set(GENERAL_SOUND ON)
-#        
+     
 elseif(SPECCY_CONFIG STREQUAL "GSP_LITE")
     set(SPECCY_CONFIG_DEFINITIONS  
-
         CPU_MHZ=378 # 378 MHz
         FLASH_MAX_FREQ_MHZ=166
         PSRAM_MAX_FREQ_MHZ=166
         HDMI_DIV=1.5 # hdmi 60Hz
-
+        TEST_DEBUG #
         GENERAL_SOUND 
         TURBOSOUND
-
     )
       set(GENERAL_SOUND ON)
 ###
-elseif(SPECCY_CONFIG STREQUAL "SPECCY_WSZERO1")
+elseif(SPECCY_CONFIG STREQUAL "SPECCY_WSZERO")
     set(SPECCY_CONFIG_DEFINITIONS  
-
         CPU_MHZ=378 MHz
         FLASH_MAX_FREQ_MHZ=66
         PSRAM_MAX_FREQ_MHZ=100
-       # HDMI_DIV=1.5 # hdmi 60Hz
-        HDMI_DIV=1.5 # hdmi 75Hz 378  60Hz 252
+        HDMI_DIV=1.5 # hdmi 60Hz*378
         TEST_DEBUG #
-
     )
       set(GENERAL_SOUND OFF)
 ###
-elseif(SPECCY_CONFIG STREQUAL "SPECCY_WSZERO2")
-    set(SPECCY_CONFIG_DEFINITIONS  
-
-      #  CPU_MHZ=252 # 378 MHz
-        CPU_MHZ=378 # 
-        FLASH_MAX_FREQ_MHZ=66
-        PSRAM_MAX_FREQ_MHZ=100
-        HDMI_DIV=1.5 # hdmi 60Hz
-       # HDMI_DIV=1.0 # hdmi 75Hz 378  60Hz 252
-        TEST_DEBUG #
-
-    )
-      set(GENERAL_SOUND OFF)
-
 
 else()
     # По умолчанию используем SPECCY
@@ -155,11 +117,8 @@ else()
         CPU_MHZ=378## MHz
         FLASH_MAX_FREQ_MHZ=166
         PSRAM_MAX_FREQ_MHZ=166
-
         TEST_DEBUG #
- 
-        HDMI_DIV=1.5 # hdmi 60Hz
-
+        HDMI_DIV=1.5 # hdmi 60Hz/378
     )
      set(GENERAL_SOUND OFF) 
 endif()
@@ -173,11 +132,12 @@ endif()
 
 
 # Автовыбор PICO_BOARD по типу платы
-if(M_BOARD STREQUAL "WS_ZERO2" OR M_BOARD STREQUAL "PI_CARD" OR M_BOARD STREQUAL "PICO_DV" OR M_BOARD STREQUAL "PICO_PC")
+set(PICO2_BOARDS WS_ZERO2 PI_CARD PICO_DV PICO_PC)
+if(M_BOARD IN_LIST PICO2_BOARDS)
     set(PICO_BOARD "pico2" CACHE STRING "Board type" FORCE)
 endif()
 
-# Определяем платформу на основе выбранной платы
+# Определяем Build Type на основе выбранного чипа
 if(PICO_BOARD STREQUAL "pico")
     set(PICO_PLATFORM "rp2040" CACHE STRING "Chip type" FORCE)
     if(NOT CMAKE_BUILD_TYPE)
@@ -277,16 +237,30 @@ if(${M_BOARD} MATCHES "WS_ZERO2" AND PCM5122)
     add_subdirectory(drivers/pcm5122)
 endif()
 
-
-
-file(GLOB_RECURSE SRC
+file(GLOB_RECURSE SRC_BASE
  "src/*.c"
  "src/*.h"
  "src/zx_emu/*.c" "src/zx_emu/*.h"
  "src/zx_emu/rom/*.h"
  "src/zx_emu/z80/*.h"
-"src/picobus/*.c"
+ #"src/picobus/*.h"
+ #"src/picobus/*.c"
 )
+# Файлы picobus только при GENERAL_SOUND
+if(GENERAL_SOUND)
+    # Добавляем  файлы picobus 
+    file(GLOB_RECURSE SRC_PICOBUS_C "src/picobus/*.c src/picobus/*.h")
+    set(SRC ${SRC_BASE} ${SRC_PICOBUS_C})
+    message(STATUS "GENERAL_SOUND: ON, добавлены .c файлы picobus")
+else()
+    set(SRC ${SRC_BASE})
+    # При GENERAL_SOUND OFF — исключаем всё из picobus
+    list(FILTER SRC EXCLUDE REGEX "/picobus/")
+    message(STATUS "GENERAL_SOUND: OFF, файлы picobus исключены")
+endif()
+###
+
+
 
 # usb_serial_stubs.c пускаем в сборку только в режиме USB_SERIAL —
 # в обычном режиме он бы дал multiple-definition с usb_key.c.
@@ -352,10 +326,6 @@ if( ${PICO_PLATFORM} MATCHES "rp2040" )
 
 	endif()
 
-
-
-
-
 pico_set_program_name(SpeccyP "ZX Spectrum emulator")
 pico_set_program_version(SpeccyP ${PORT_VERSION})
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
@@ -394,7 +364,7 @@ ${SPECCY_CONFIG_DEFINITIONS}
 # частота cloc'a 595  (в герцах)
 FREQ_595=50000000  #//750000000  // Например: 75 МГц 
 
-############################################################
+#################################
 ###   для эмулятора Z80 REDCODE
 Z80_STATIC
 Z80_EXTERNAL_HEADER="Z80_compat.h"
@@ -406,21 +376,13 @@ Z80_WITH_PRECOMPUTED_DAA
 #Z80_MODEL_ZILOG_NMOS
 ##Z80_MODEL_ZILOG_CMOS
 
-############################################################
-
-${PLATFORM_DEFINITIONS}
+##################################
 )
 
 # === подключаем файл конфигурации для выбранной платы ===
 include(boards/${M_BOARD}.cmake)
 
-#######################################################
-
-
-
-
-
-###############################################
+######################################################
 if( ${PICO_PLATFORM} MATCHES "rp2040")
 set (P_VERSION p1)# версия чипа 
 target_compile_definitions(${PROJECT_NAME} PRIVATE
@@ -435,7 +397,6 @@ endif()
 if( ${PICO_PLATFORM} MATCHES "rp2350")
 set (P_VERSION p2)# версия чипа 
 target_compile_definitions(${PROJECT_NAME} PRIVATE
-      ##  PICO_PIO_USE_GPIO_BASE # для использования GPIO >31 раскомментировать если RP2350B 
         PICO_RP2350
         RP2350_256K   ##для памяти RAM 256kB на RP2350 не используя PSRAM
         ## AY-3-8910 
@@ -444,23 +405,6 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
         TRANSFER_COUNT=1<<24
 )
 endif()
-#-----------------------------------------
-
-#---------------------------------------------------------------
-# Конфигурация дефайнов для использования PSRAM
-#---------------------------------------------------------------
-
-    # Обработка конфигураций
-
-
-
-
-
-
- 
-   
-  
-
 #----------------------------------------------
 # Формирование FW_VERSION:
 
@@ -503,25 +447,18 @@ endif()
 
 if( ${M_BOARD} MATCHES "GSP_M2")
 target_compile_definitions(${PROJECT_NAME} PRIVATE
-    FW_VERSION="${PORT_VERSION} [gs m2]"
+    FW_VERSION="${PORT_VERSION} [${M_VERSION}${P_VERSION}]"
 )
 endif()
-
-#SET(BUILD_NAME "${PROJECT_NAME}_${PORT_VERSION}_${M_VERSION}${P_VERSION}_${VOUT}")
-# Модифицируем BUILD_NAME:
- 
-if(PCM5122)
+##########################################################################
+# Формирование BUILD_NAME
+if(DEBUG)
+    SET(BUILD_NAME "${PROJECT_NAME}")
+elseif(PCM5122)
     SET(BUILD_NAME "${PROJECT_NAME}_${PORT_VERSION}_${M_VERSION}${P_VERSION}_pcm5122")
 else()
     SET(BUILD_NAME "${PROJECT_NAME}_${PORT_VERSION}_${M_VERSION}${P_VERSION}")
 endif()
-
-if(DEBUG)
-    SET(BUILD_NAME "${PROJECT_NAME}")
-    
-
-endif()
-
 
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "${BUILD_NAME}")
 
