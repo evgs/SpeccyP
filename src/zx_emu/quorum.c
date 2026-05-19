@@ -16,12 +16,16 @@ extern uint8_t zx_1ffd_lastOut;
 extern uint8_t zx_0000_lastOut;
 
 extern uint32_t zx_RAM_bank_active;
+extern uint8_t zx_RAM_bank_7ffd;
 
 
 extern uint8_t rom;
 extern uint8_t *zx_cpu_ram[];
 extern uint8_t *zx_ram_bank[]; 
 extern uint8_t* zx_rom_bank[];
+
+extern uint8_t* zx_video_ram;
+
 
 extern volatile uint8_t * PSRAM_DATA ;
 
@@ -32,6 +36,43 @@ void trdos_out(uint8_t port, uint8_t val);
 extern uint8_t wd1793_PortFF;
 
 uint8_t qu_ExtKb[8];
+
+void fast(pager7ffd_Quorum1024)(uint8_t val) {
+	//zx_RAM_bank_active  = (val&0b00000111); //128K only
+    // linear bank numbering, bits 5 7 6 3 2 1
+	zx_RAM_bank_active  = (val & 0b00100111) | ((val >> 3) & 0b00011000); //1024k
+
+    //if (val& 0x20) zx_state_48k_MODE_BLOCK=true; // 5bit = 1 48k mode block
+    zx_state_48k_MODE_BLOCK = false;
+    //        76543210  5 bit
+    zx_RAM_bank_7ffd = (val&0b00000111) ; // 
+       
+    #if RP2350_256K 
+	    zx_cpu_ram[3]=zx_ram_bank[zx_RAM_bank_active & 0x0f];
+    #else
+	   zx_cpu_ram[3]=zx_ram_bank[zx_RAM_bank_active & 0x07];
+    #endif
+	
+	if (val&8) zx_video_ram=zx_ram_bank[7];   else zx_video_ram=zx_ram_bank[5];	
+    rom_select(); // переключение ПЗУ по портам и по сигналу DOS
+}
+
+void fast(rom_select_Quorum1024)() {
+    if ((zx_0000_lastOut & 0b00000001)) {
+        //enable ram page
+        zx_cpu_ram[0] = zx_rom_bank[3]; // STUB
+    } else 
+    if ((zx_0000_lastOut & 0b00100000) == 0) {
+	    rom=3;
+        zx_cpu_ram[0] = zx_rom_bank[3]; 
+    }
+	else 
+	{
+		rom=(zx_7ffd_lastOut & 0x10)>>4;  // 1 if bit4 is set else 0
+		zx_cpu_ram[0]=zx_rom_bank[rom]; 
+	} 
+
+}
 
 uint8_t QuorumExtKeyboardDecode(uint8_t portH) {
     uint8_t result = 0;

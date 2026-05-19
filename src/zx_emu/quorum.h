@@ -11,3 +11,5 @@
 
 void machine_Quorum1024(Machine *self);
 void init_rom_ram_Q1024();
+void rom_select_Quorum1024();
+void pager7ffd_Quorum1024(uint8_t val);
