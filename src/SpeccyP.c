@@ -2942,6 +2942,7 @@ if (size_psram==0)
 void file_manager (void)
          //    if ((is_menu_mode) && (!trdos))// файловое меню
             {
+                strncpy(files[0],"..", LENF1);  //up-dir
                 //	tap_loader_active=false;// рудимент от аудио загрузки
                  hardAY_on_off=0;
                 hardAY_off();// off hard AY файловое меню
