@@ -34,7 +34,7 @@ function(pico_generate_disassembly TARGET)
 endfunction()
 
 # Устанавливаем параметры платы и чипа и так далее
-set(PICO_BOARD pico2 CACHE STRING "Board type" FORCE)
+set(PICO_BOARD pico2 CACHE STRING "Board type")
 
 #set(DEBUG ON)
 
