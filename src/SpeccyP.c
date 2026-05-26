@@ -41,6 +41,7 @@
 #include "string.h"
 #include "util_sd.h"
 #include "util_trd.h"
+#include "util_cpm.h"
 
 #include "kbd_img.h"
 
@@ -3463,6 +3464,24 @@ void file_info (void)
                     cur_file_index_old = cur_file_index;
 
                     if (!ReadCatalog(conf.activefilename, current_lfn, false))
+                    {
+
+                        //    
+                    }
+
+                     return; 
+                }
+                //-----------------------------------------------
+                // CPM INFO
+                if (strcasecmp(ext, "cpm") == 0)
+                {
+                    strncpy(temp_msg, current_lfn, 22);
+                    strcpy(conf.activefilename, dir_patch);
+                    strcat(conf.activefilename, "/");
+                    strcat(conf.activefilename,files[cur_file_index]);
+                    cur_file_index_old = cur_file_index;
+
+                    if (!ReadCPMDir(conf.activefilename, current_lfn, false))
                     {
 
                         //    
