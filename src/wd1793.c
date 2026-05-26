@@ -35,6 +35,9 @@ uint16_t FormatCounter = 0;     // Счетчик байт 0x4E при форм�
 uint8_t NewDrive = 5;           // Номер дисковода, который нужно смонтировать
 uint8_t OldDrive = 5;           // Номер ранее активного дисковода
 
+uint8_t fastWD1793 = 1;         // 1 = быстрая эмуляция. данные всегда готовы, нет ошибок чтения по пропуску данных
+                                // 0 = нормальная эмуляция
+
 // Переменные файловой системы FATFS
 FIL fileTRD;                    // Файл образа диска
 FATFS fss;
@@ -570,11 +573,16 @@ void WD1793_CmdReadingSectorSCL()
 //-----------------------------------------------------------------------------
 void WD1793_CmdReadingSectorTRD()
 {
-    if(!HasTimePeriodExpired(BYTE_READ_TIME)) return; // Задержка 32us
+    if (!fastWD1793) {
+        if(!HasTimePeriodExpired(BYTE_READ_TIME)) return; // Задержка 32us
 
-    if(SectorPos != 0 && Requests & _BV(rqDRQ))
-    {
-        WD1793.StatusRegister |= _BV(stsLostData);  
+        if(SectorPos != 0 && Requests & _BV(rqDRQ))
+        {
+            WD1793.StatusRegister |= _BV(stsLostData);  
+        }
+    } else {
+        //fast read
+        if (Requests & _BV(rqDRQ)) return; //Data register not empty
     }
 
     if (SectorPos >= fdd.sector_size)
@@ -1032,9 +1040,13 @@ void WD1793_CmdStartReadingSector()
     // wait_msg = 3000; 
 
     //pseudo-search sector
-    if(!HasTimePeriodExpired(10000)) return; // Задержка 32us
+    if (!fastWD1793) {
+        if(!HasTimePeriodExpired(10000)) return; // Задержка 32us
 
-    CurrentCommand = WD1793_CmdReadingSector;
+        CurrentCommand = WD1793_CmdReadingSector;
+    } else {
+        CurrentCommand = WD1793_CmdReadingSector;
+    }
 }
 
 //-----------------------------------------------------------------------------
