@@ -120,9 +120,9 @@ char afilename[LENF];
 //===============================================================
 void nmi_zx()
 {
-    if (z1->cpu.nmia != Z_NULL) 
+    if (cpu_zx.nmia != Z_NULL) 
     // invoke NMI request if machine-specific NMI rom switcher is defined
-        z80_nmi(&z1->cpu);
+        z80_nmi(&cpu_zx);
 }
 //--------------------------------------------------
 
@@ -868,7 +868,11 @@ vreg_set_voltage(conf.voltage);// установка напряжения из i
          startVIDEO(VIDEO_HDMI);// только HDMI
 #else 
          conf.hdmi_fdiv = HDMI_DIV;
+    #if defined(HDMI_HSTX)  // Only HDMI
+         vout_select= VIDEO_HDMI;
+    #else 
          vout_select= video_select();// автоопределение
+         #endif
          startVIDEO(vout_select);     
 #endif 
 //
@@ -881,9 +885,8 @@ vreg_set_voltage(conf.voltage);// установка напряжения из i
          startVIDEO(VIDEO_HDMI);// только HDMI
 #endif 
 
- 
 #ifdef  SOUND_I2S_ONLY
-        conf.type_sound=3; // только i2s
+        conf.type_sound=I2S_TS; // только i2s
 #endif
 
 #ifdef  SOUND_PWM_ONLY
@@ -918,8 +921,7 @@ vreg_set_voltage(conf.voltage);// установка напряжения из i
   }
 // tuh_task(); // tinyusb host task
 #endif
-//#####################################################################
-    	
+//#####################################################################	
 	    convert_kb_u_to_kb_zx(&kb_st_ps2,zx_input.kb_data);
 //#####################################################################        
 // инициализация с выводом результата на дисплей
@@ -1102,7 +1104,7 @@ draw_text(11+FONT_W,85+YPOS,"GeneralSound + TurboSound",CL_GRAY,CL_BLACK);
 #endif 
 #endif
 #else
-draw_text(11+FONT_W,85+YPOS,"HDMI Audio",CL_GRAY,CL_BLACK); 
+draw_text(11+FONT_W,85+YPOS,"HDMI Audio TurboSound",CL_GRAY,CL_BLACK); 
 #endif
 
 
@@ -1358,6 +1360,8 @@ int fast(main)(void){
  	int hz = 96000;	//44000 //44100 //96000 //22050
 	repeating_timer_t timer_audio;
 	// negative timeout means exact delay (rather than delay between callbacks)
+    // f = 1 / T = 1 / 9 μs = 111111 Гц
+    // f = 1 / T = 1 / -21 μs = 47619Гц	-0,79% Гц
  	if (!add_repeating_timer_us(AY_SAMPLE_RATE, AY_timer_callback, NULL, &timer_audio)) return 1;// -10  частота ноты До 237Гц  нужно 240,0058 Гц
     #endif
 
@@ -1863,8 +1867,8 @@ void disasm(void) // [END] KEY
     hardAY_on_off=0;
     hardAY_off();// off hard AY help keyboard
     disassembler();
-  //  address_pc =Z80_PC(z1->cpu);
-     dis_adres = Z80_PC(z1->cpu);       // PC 16-битное значение
+  //  address_pc =Z80_PC(cpu_zx);
+     dis_adres = Z80_PC(cpu_zx);       // PC 16-битное значение
     bool dis_dump= true;
       if(dis_dump) list_disassm( );
         else  list_dump();
@@ -2076,7 +2080,7 @@ void setup_zx(void)
       #ifdef GENERAL_SOUND
         draw_text(x1 + 126, y1 + 20+ M_SOUND*10, "GeneralSound + TS", CL_GRAY, CL_BLACK);
       #elifdef HDMI_HSTX
-        draw_text(x1 + 126, y1 + 20+ M_SOUND*10, "HDMI Audio", CL_GRAY, CL_BLACK);
+        draw_text(x1 + 126, y1 + 20+ M_SOUND*10, "HDMI Audio TS", CL_GRAY, CL_BLACK);
       #else  
         draw_text(x1 + 120, y1 + 20+ M_SOUND*10, menu_sound[conf.type_sound], CL_GRAY, CL_BLACK);
       #endif

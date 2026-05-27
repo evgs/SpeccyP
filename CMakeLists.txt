@@ -39,7 +39,7 @@ set(PICO_BOARD pico2 CACHE STRING "Board type")
 #set(DEBUG ON)
 
 # == Конфигурация  SpeccyP ==
-set (BASE_VERSION "1.6.4 ${GIT_VERSION}")
+set (BASE_VERSION "1.6.5 ${GIT_VERSION}")
 
 # Конфигурация сборки (можно задать через -DSPECCY_CONFIG=... и -DM_BOARD=...)
 # SPECCY_CONFIG: SPECCY | SPECCY_WSZERO1  | SPECCY_WSZERO2  | GSP_FULL | GSP_M2  |GSP_LITE
@@ -243,8 +243,6 @@ file(GLOB_RECURSE SRC_BASE
  "src/zx_emu/*.c" "src/zx_emu/*.h"
  "src/zx_emu/rom/*.h"
  "src/zx_emu/z80/*.h"
- #"src/picobus/*.h"
- #"src/picobus/*.c"
 )
 # Файлы picobus только при GENERAL_SOUND
 if(GENERAL_SOUND)
@@ -259,8 +257,6 @@ else()
     message(STATUS "GENERAL_SOUND: OFF, файлы picobus исключены")
 endif()
 ###
-
-
 
 # usb_serial_stubs.c пускаем в сборку только в режиме USB_SERIAL —
 # в обычном режиме он бы дал multiple-definition с usb_key.c.
@@ -337,7 +333,7 @@ set (FATFS_SPI spi0)
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE
 ## Номер версии конфигурационного файла
-CONFIG_VERSION=170527
+CONFIG_VERSION=240527
 CPU_KHZ=CPU_MHZ*1000
 PICOBUS_SPEED=20   #// 160000000 = 20MB/s // 80000000 = 10MB/s
 POWER_MODE_WEACT=1
@@ -351,15 +347,12 @@ VOLTAGE_RP2040=VREG_VOLTAGE_1_30
 
 #NO_GMX 
 KEY_UPDATE_MODE
-
-
 DEVICE_DEFAULT # стандартная конфигурация
 #DEVICE_HDMI90_I2S # Монитор HDMI 90Hz i2s
 # DEVICE_PI_CARD # Монитор HDMI 60Hz i2s
 
 # Конфигурация в зависимости от GSP_CONFIG
 ${SPECCY_CONFIG_DEFINITIONS}
-
 
 # частота cloc'a 595  (в герцах)
 FREQ_595=50000000  #//750000000  // Например: 75 МГц 
@@ -375,7 +368,6 @@ Z80_WITH_PRECOMPUTED_DAA
 #Z80_HALT_CANCEL
 #Z80_MODEL_ZILOG_NMOS
 ##Z80_MODEL_ZILOG_CMOS
-
 ##################################
 )
 
@@ -389,7 +381,9 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
         PICO_RP2040
         ## AY-3-8910 
         AY_DELTA=2
-        AY_SAMPLE_RATE=-9 #-9
+        # -9  111111 Гц  ## -21 μs = 47619 Гц	-0,79% ??? 
+        AY_SAMPLE_RATE=-9 ##Чем чаше вызывать тем качество эмуляции AY лучше
+        I2S_FREQ=48000 ##111111 #48000 
         TRANSFER_COUNT=1<<31
 )
 endif()
@@ -401,7 +395,10 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
         RP2350_256K   ##для памяти RAM 256kB на RP2350 не используя PSRAM
         ## AY-3-8910 
         AY_DELTA=2
-        AY_SAMPLE_RATE=-9#(-1000000 / (4* 48000) ) ##//-9// 
+        # -9  111111 Гц  ## -21 μs = 47619 Гц	-0,79% ??? 
+        # для RP2350 можно и -5 выставить
+        AY_SAMPLE_RATE=-9 ##Чем чаше вызывать тем качество эмуляции AY лучше 
+        I2S_FREQ=48000 ##111111 #48000 
         TRANSFER_COUNT=1<<24
 )
 endif()
@@ -439,11 +436,10 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
 endif()
 
 if( ${M_BOARD} MATCHES "MURM2")
-target_compile_definitions(${PROJECT_NAME} PRIVATE
-    FW_VERSION="${PORT_VERSION} [${M_VERSION}${P_VERSION}]"
-)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE
+        FW_VERSION="${PORT_VERSION} [${M_VERSION}${P_VERSION}]"
+        )
 endif()
-
 
 if( ${M_BOARD} MATCHES "GSP_M2")
 target_compile_definitions(${PROJECT_NAME} PRIVATE
@@ -454,6 +450,8 @@ endif()
 # Формирование BUILD_NAME
 if(DEBUG)
     SET(BUILD_NAME "${PROJECT_NAME}")
+elseif(HDMI_HSTX)    
+    SET(BUILD_NAME "${PROJECT_NAME}_${PORT_VERSION}_${M_VERSION}${P_VERSION}_hdmi_audio")  
 elseif(PCM5122)
     SET(BUILD_NAME "${PROJECT_NAME}_${PORT_VERSION}_${M_VERSION}${P_VERSION}_pcm5122")
 else()
@@ -529,7 +527,6 @@ else()
         tinyusb_board
     )
 endif()
-
 
 
 target_link_options(${PROJECT_NAME} PRIVATE -Xlinker --print-memory-usage --data-sections)
