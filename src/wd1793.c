@@ -535,12 +535,16 @@ void SCL_read_sector(void)
 //-----------------------------------------------------------------------------
 void WD1793_CmdReadingSectorSCL()
 {
-    if(!HasTimePeriodExpired(BYTE_READ_TIME)) return; // Задержка между байтами
+    if (!fastWD1793) {
+        if(!HasTimePeriodExpired(BYTE_READ_TIME)) return; // Задержка 32us
 
-    // Проверка на потерю данных (если предыдущий байт не был считан)
-    if(SectorPos != 0 && Requests & _BV(rqDRQ))
-    {
-        WD1793.StatusRegister |= _BV(stsLostData);  
+        if(SectorPos != 0 && Requests & _BV(rqDRQ))
+        {
+            WD1793.StatusRegister |= _BV(stsLostData);  
+        }
+    } else {
+        //fast read
+        if (Requests & _BV(rqDRQ)) return; //Data register not empty
     }
 
     if (SectorPos >= fdd.sector_size)
