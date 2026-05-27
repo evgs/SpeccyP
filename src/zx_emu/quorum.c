@@ -113,7 +113,7 @@ void init_rom_ram_Q1024() {
 }
 
 
-void nmi_Quorum1024(Machine *self)
+void nmi_Quorum1024(Z80 *cpu)
 {
     rom=3;  
     zx_cpu_ram[0] = zx_rom_bank[3];
@@ -122,7 +122,7 @@ void nmi_Quorum1024(Machine *self)
 
 #ifdef MURM1
 // чтение из памяти Quorum (PSRAM MURM1)
-inline static uint8_t fast(read_z80_q)(Machine *self, uint16_t addr)
+inline static uint8_t fast(read_z80_q)(Z80 *cpu, uint16_t addr)
 {
     const uint16_t masked_addr = addr & 0x3fff;  // Предвычисление маскированного адреса
     uint8_t x = (addr >> 14);
@@ -147,7 +147,7 @@ inline static uint8_t fast(read_z80_q)(Machine *self, uint16_t addr)
 }
 //##########################################################################################
 // запись в память Quorum
-inline static void fast(write_z80_q)(Machine *self, uint16_t addr, uint8_t val)
+inline static void fast(write_z80_q)(Z80 *cpu, uint16_t addr, uint8_t val)
 {
     const uint16_t masked_addr = addr & 0x3fff;  // Предвычисление маскированного адреса
 	uint8_t x = (addr >> 14);
@@ -174,7 +174,7 @@ inline static void fast(write_z80_q)(Machine *self, uint16_t addr, uint8_t val)
 #endif
 
 // чтение из памяти Quorum
-inline static uint8_t fast(_read_z80_q)(Machine *self, uint16_t addr)
+inline static uint8_t fast(_read_z80_q)(Z80 *cpu, uint16_t addr)
 {
     const uint16_t masked_addr = addr & 0x3fff;  // Предвычисление маскированного адреса
     uint8_t x = (addr >> 14);
@@ -196,7 +196,7 @@ inline static uint8_t fast(_read_z80_q)(Machine *self, uint16_t addr)
 	return zx_cpu_ram[x][masked_addr];
 }
 // запись в память Quorum
-inline static void fast(_write_z80_q)(Machine *self, uint16_t addr, uint8_t val)
+inline static void fast(_write_z80_q)(Z80 *cpu, uint16_t addr, uint8_t val)
 {
     const uint16_t masked_addr = addr & 0x3fff;  // Предвычисление маскированного адреса
 	uint8_t x = (addr >> 14);
@@ -227,7 +227,7 @@ inline static void fast(_write_z80_q)(Machine *self, uint16_t addr, uint8_t val)
 // IN QUORUM
 //###############################################
 
-inline static uint8_t fast(in_z80quorum)(Machine *self, uint16_t port16) {
+inline static uint8_t fast(in_z80quorum)(Z80 *cpu, uint16_t port16) {
 	uint8_t portH = port16 >> 8;
 	uint8_t portL = (uint8_t)port16&0x00ff;
 
@@ -313,7 +313,7 @@ inline static uint8_t fast(in_z80quorum)(Machine *self, uint16_t port16) {
 //===========================================================================
 // Quorum 512
 //===========================================================================
-inline static void fast(out_z80quorum)(Machine *self, uint16_t port16, uint8_t val)
+inline static void fast(out_z80quorum)(Z80 *cpu, uint16_t port16, uint8_t val)
 {
 //	uint8_t portH = port16 >> 8;
 	uint8_t portL = (uint8_t)port16;
@@ -480,37 +480,37 @@ void convertQuorumKbAccords(kb_u_state* kb_st,uint8_t* zx_kb)
 
 }
 
-void machine_Quorum1024(Machine *self) {
-    self->cpu.context      = self;
+void machine_Quorum1024(Z80 *cpu) {
+    cpu->context      = cpu;
     #ifdef MURM1
     if (psram_type) {
-        self->cpu.fetch_opcode = (Z80Read )read_z80_q;
-        self->cpu.fetch        = (Z80Read )read_z80_q;
-        self->cpu.nop          = (Z80Read )read_z80_q;
-        self->cpu.read         = (Z80Read )read_z80_q;
-        self->cpu.write        = (Z80Write)write_z80_q;
+        cpu->fetch_opcode = (Z80Read )read_z80_q;
+        cpu->fetch        = (Z80Read )read_z80_q;
+        cpu->nop          = (Z80Read )read_z80_q;
+        cpu->read         = (Z80Read )read_z80_q;
+        cpu->write        = (Z80Write)write_z80_q;
     }
     else
     #endif
     {
-        self->cpu.fetch_opcode = (Z80Read )_read_z80_q;
-        self->cpu.fetch        = (Z80Read )_read_z80_q;
-        self->cpu.nop          = (Z80Read )_read_z80_q;
-        self->cpu.read         = (Z80Read )_read_z80_q;
-        self->cpu.write        = (Z80Write)_write_z80_q;
+        cpu->fetch_opcode = (Z80Read )_read_z80_q;
+        cpu->fetch        = (Z80Read )_read_z80_q;
+        cpu->nop          = (Z80Read )_read_z80_q;
+        cpu->read         = (Z80Read )_read_z80_q;
+        cpu->write        = (Z80Write)_write_z80_q;
     }
-    self->cpu.in           = (Z80Read )in_z80quorum;
-    self->cpu.out          = (Z80Write)out_z80quorum;
-    self->cpu.halt         = Z_NULL;
-    self->cpu.nmia         = (Z80Read )nmi_Quorum1024;
-    self->cpu.inta         = Z_NULL;//= (Z80Read )inta_callback;
-    self->cpu.int_fetch    = Z_NULL;
-    self->cpu.ld_i_a       = Z_NULL;
-    self->cpu.ld_r_a       = Z_NULL;
-    self->cpu.reti         = Z_NULL;
-    self->cpu.retn         = Z_NULL;
-    self->cpu.hook         = Z_NULL;
-    self->cpu.illegal      = Z_NULL;
+    cpu->in           = (Z80Read )in_z80quorum;
+    cpu->out          = (Z80Write)out_z80quorum;
+    cpu->halt         = Z_NULL;
+    cpu->nmia         = (Z80Read )nmi_Quorum1024;
+    cpu->inta         = Z_NULL;//= (Z80Read )inta_callback;
+    cpu->int_fetch    = Z_NULL;
+    cpu->ld_i_a       = Z_NULL;
+    cpu->ld_r_a       = Z_NULL;
+    cpu->reti         = Z_NULL;
+    cpu->retn         = Z_NULL;
+    cpu->hook         = Z_NULL;
+    cpu->illegal      = Z_NULL;
     
     pent_config = QUORUM1024;
     ticks_per_frame=71680 ;// 71680- Пентагон //70908 - 128 +2A // 70784 Scorpion

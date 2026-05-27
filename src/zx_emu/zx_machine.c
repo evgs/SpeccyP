@@ -2956,7 +2956,6 @@ void init_mashine_and_extram(uint8_t config_mashine) // инициализаци
     machine_Pentagon_1024(&cpu_zx);
 		break; //
 	case SCORP256:
-        main_nmi_key = true;
         machine_Scorpion_256(&cpu_zx);   
 		break; //
  
@@ -2967,12 +2966,11 @@ void init_mashine_and_extram(uint8_t config_mashine) // инициализаци
     //  #endif    
 
 	case NOVA256:
-          main_nmi_key = true;
           machine_NOVA_256(&cpu_zx);
 		break; //
     
     case QUORUM1024:
-        machine_Quorum1024(z1);
+        machine_Quorum1024(&cpu_zx);
         break;
 
 	case PENT8M:

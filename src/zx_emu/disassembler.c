@@ -105,8 +105,10 @@ void disassembler(void)
         snprintf(temp_msg, sizeof temp_msg, "IM%01X",  cpu_zx.im);
         draw_text(10+18, 10+ y*14, temp_msg,CL_GRAY , CL_BLACK); // 
 
-
-       draw_text(0 + 10, 10+ y*16, "ports",CL_GREEN , CL_BLACK); //
+      
+       draw_text(0 + 10, 10+ y*15, "ports",CL_GREEN , CL_BLACK); //
+        snprintf(temp_msg, sizeof temp_msg, "Q-00 %02X",  zx_0000_lastOut );
+      draw_text(0 + 10, 10+ y*16, temp_msg,CL_GRAY , CL_BLACK); // 
         snprintf(temp_msg, sizeof temp_msg, "7FFD %02X",  zx_7ffd_lastOut );
       draw_text(0 + 10, 10+ y*17, temp_msg,CL_GRAY , CL_BLACK); // 
 	    snprintf(temp_msg, sizeof temp_msg, "1FFD %02X",  zx_1ffd_lastOut );
