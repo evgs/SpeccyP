@@ -51,7 +51,7 @@ typedef union {
                                     //  После зарезервированной области на диске 
                                     //  располагается оглавление CP/M
                                     //  Начало оглавления выровнено по началу дорожки, первая головка
-        uint8_t     checksum        //  Контрольная сумма                       (0x4b)
+        uint8_t     checksum;       //  Контрольная сумма                       (0x4b)
     };
     uint8_t bytes[0x20];
 } CPM_DiskHeader;
@@ -62,8 +62,13 @@ static_assert(CPM_DISKHEADER_SZ == 0x20, "Wrong structure packing");
 
 typedef struct __attribute ((packed)) {
     uint8_t user;
-    char name[8];
-    char type[3];
+    union {
+        struct __attribute ((packed)){
+            char name[8];
+            char type[3];
+        };
+        uint8_t nametype[11];
+    };
     uint8_t ex;
     uint8_t s1;
     uint8_t s2;
