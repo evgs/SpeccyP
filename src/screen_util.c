@@ -66,7 +66,7 @@ void draw_symbol(int x,int y,int symb,color_t colorText,color_t colorBg)
 
 
 
-void draw_text(int x,int y,char* text,color_t colorText,color_t colorBg)
+void draw_text(int x,int y, const char* text,color_t colorText,color_t colorBg)
 {
     while (*text) {
         if (x >= scr_W) break;
@@ -76,7 +76,7 @@ void draw_text(int x,int y,char* text,color_t colorText,color_t colorBg)
     }
 }
 
-void draw_text_len(int x,int y,char* text,color_t colorText,color_t colorBg,int len){
+void draw_text_len(int x,int y, const char* text,color_t colorText,color_t colorBg,int len){
  
     while (*text) {
         if (x >= scr_W) break;
@@ -98,7 +98,7 @@ void draw_text_len(int x,int y,char* text,color_t colorText,color_t colorBg,int 
 }
 //####################################################################################
 // Вывод текста для выбора файлов с курсором
-void draw_text_file(int x,int y,char* text,color_t colorText,color_t colorBg,int len)
+void draw_text_file(int x,int y,const char *text,color_t colorText,color_t colorBg,int len)
 {
     draw_text_len(x, y, text, colorText, colorBg, len);
 }
