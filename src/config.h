@@ -104,7 +104,6 @@ extern uint32_t dtcpu;
 
 #define FW_AUTHOR "Speccy_P"
  
-//-----------------------------------------------------------------------------------------------
 enum {
     PENT128 = 0,
     SPEC48 = 1,
@@ -257,12 +256,12 @@ color:
 
 //if (file_type[DRV]==TRD)
 enum {
-    TRD = 0,
-    SCL = 1,
-    TRDS = 3, // укороченый TRD
-    FDI = 4,
-    CP_M = 5,  // sector 1024B, 5 sectors per track, 2 sides 80 tracks
-    NONE = 0xff,
+    TRD =    0,
+    SCL =    1,
+    TRDS =   3, // укороченый TRD
+    FDI =    4,
+    CP_M =   5,  // sector 1024B, 5 sectors per track, 2 sides 80 tracks
+    NONE =   0xff,
 };
 
 extern uint8_t sectors_per_track;

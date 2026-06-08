@@ -31,12 +31,14 @@
 #include "rom/rom48Q_nova.h"// 48 kb   quorum
 #include "rom/rom128Q_nova.h"// 128 kb quorum
 
+
+
 //#include "rom/service.h"// сервис монитор пентагон 
 
 #include "rom/romScorpion295.h"// Scorpion ZS256
 //#include "rom/romScorpion.h"// Scorpion ZS256 Old
 
-#include "quorum.h"
+#include "quorum.h" 
 
 //###
 #include <stddef.h>
@@ -159,9 +161,24 @@ uint8_t atr1;
 	uint8_t* p_zx_video_ramATTR7=NULL;
     uint64_t inx_tick_screen_ff;// счетчик тактов экрана для порта FF
 //###############################################
+//######################################################################
+bool is_SD_active=false;
+uint8_t z_controler_cs;
+//--------------------------------------------------
+static inline uint8_t READ_SD_BYTE()
+{
+    uint8_t dataSPI=spi_get_hw(SDCARD_SPI_BUS)->dr;
+    spi_get_hw(SDCARD_SPI_BUS)->dr=0xff;  
+    return   dataSPI;
+}
 
+static inline void  WRITE_SD_BYTE(uint8_t data) 
+{
+    volatile uint8_t dataSPI=spi_get_hw(SDCARD_SPI_BUS)->dr;
+    spi_get_hw(SDCARD_SPI_BUS)->dr=data; 
 
-//#########################################################################
+}
+//============================================================
 //######################################################################
 
 
@@ -281,6 +298,8 @@ case QUORUM1024:
 	return;
 	break;
 
+
+    
 case SCORP256:
 
 if ((zx_1ffd_lastOut & 0x02) == 0x02)
@@ -750,10 +769,19 @@ inline static uint8_t fast(in_z80)(Z80 *cpu, uint16_t port16) {
     if (portL == 0xB3) return in_GSP(GS_READ_IN_B3); 
     if (portL == 0xBB) return in_GSP(GS_STATUS_IN_BB); 
     #endif 
+
     #if defined(Z_CONTROLER)
     if (portL == 0x57) return in_GSP(ZC_READ_IN_57); 
     if (portL == 0x77) return in_GSP(ZC_READ_IN_77); 
+    #else
+    if (portL == 0x57) return READ_SD_BYTE();
+    if (portL == 0x77) 
+    {
+        if (is_SD_active)   return 0xfc;
+                            return 0xff;
+    }
     #endif
+
     #if defined(RTC_NOVA)
     if (portL == 0x89) return in_GSP(RTC_READ_IN_89); 
     #endif
@@ -830,10 +858,19 @@ inline static uint8_t fast(in_z80_cash)(Z80 *cpu,uint16_t port16) {
     if (portL == 0xB3) return in_GSP(GS_READ_IN_B3); 
     if (portL == 0xBB) return in_GSP(GS_STATUS_IN_BB); 
     #endif 
+
     #if defined(Z_CONTROLER)
     if (portL == 0x57) return in_GSP(ZC_READ_IN_57); 
     if (portL == 0x77) return in_GSP(ZC_READ_IN_77); 
+    #else
+    if (portL == 0x57) return READ_SD_BYTE();
+    if (portL == 0x77) 
+    {
+        if (is_SD_active)   return 0xfc;
+                            return 0xff;
+    }
     #endif
+
     #if defined(RTC_NOVA)
     if (portL == 0x89) return in_GSP(RTC_READ_IN_89); 
     #endif
@@ -905,10 +942,19 @@ inline static uint8_t fast(in_z80_p8)(Z80 *cpu, uint16_t port16) {
     if (portL == 0xB3) return in_GSP(GS_READ_IN_B3); 
     if (portL == 0xBB) return in_GSP(GS_STATUS_IN_BB); 
     #endif 
+
     #if defined(Z_CONTROLER)
     if (portL == 0x57) return in_GSP(ZC_READ_IN_57); 
     if (portL == 0x77) return in_GSP(ZC_READ_IN_77); 
+    #else
+    if (portL == 0x57) return READ_SD_BYTE();
+    if (portL == 0x77) 
+    {
+        if (is_SD_active)   return 0xfc;
+                            return 0xff;
+    }
     #endif
+    
     #if defined(RTC_NOVA)
     if (portL == 0x89) return in_GSP(RTC_READ_IN_89); 
     #endif
@@ -1024,14 +1070,16 @@ inline void fast (zx_machine_set_7ffd_out)(uint8_t val)// переключени
 	
 	   if (val&8) zx_video_ram=zx_ram_bank[7];   else zx_video_ram=zx_ram_bank[5];	
        rom_select(); // переключение ПЗУ по портам и по сигналу DOS
-       	return; // выход нафиг
-#endif    	    
-
+	return; // выход нафиг
+#endif    	 
 
 	return; // выход нафиг	
 	case QUORUM1024:
         pager7ffd_Quorum1024(val);
     	return; // выход нафиг	
+
+
+
 //--------------------------------------------------------------------------------
 #ifdef RP2350_256K
      case SCORP256 /* Scorpion 256 */:
@@ -1172,10 +1220,26 @@ inline static void fast(spec128)(Z80 *cpu, uint16_t port16, uint8_t val)
 		if(port16 == 0x01FF){saa1099_write(1,val);return;}					
 		if(port16 == 0x00FF){saa1099_write(0,val);return;}
     #endif
+
     #ifdef Z_CONTROLER 
         if (portL == 0x57) {out_GSP(ZC_WRITE_OUT_57,  val); return;}// передача данных в SD карту
         if (portL == 0x77) {out_GSP(ZC_WRITE_OUT_77,val);z_controler_cs = val; return;}//управление SD   SD_SPI_CS0_PIN val&0x02
+    #else    
+        if (portL == 0x57) // передача данных в SD карту
+        {
+            if (is_SD_active)  WRITE_SD_BYTE(val);
+             return;
+            }
+
+        if (portL == 0x77) 
+        {
+         is_SD_active=((val & 0x01)==1);
+         gpio_put(SDCARD_PIN_CS,val & 0x02);
+         z_controler_cs = val; 
+         return;
+        }
     #endif
+
     #ifdef  RTC_NOVA
         if (portL  ==  0x88 ) {out_GSP(RTC_WRITE_OUT_88,  val); return;}//номер регистра часов
         if (portL  ==  0x89 ) {out_GSP(RTC_WRITE_OUT_89,  val); return;}//данные регистра часов
@@ -1260,10 +1324,26 @@ inline static void fast(extram128)(Z80 *cpu,uint16_t port16, uint8_t val)
 		if(port16 == 0x01FF){saa1099_write(1,val);return;}					
 		if(port16 == 0x00FF){saa1099_write(0,val);return;}
     #endif
+
     #ifdef Z_CONTROLER 
         if (portL == 0x57) {out_GSP(ZC_WRITE_OUT_57,  val); return;}// передача данных в SD карту
         if (portL == 0x77) {out_GSP(ZC_WRITE_OUT_77,val);z_controler_cs = val; return;}//управление SD   SD_SPI_CS0_PIN val&0x02
+    #else    
+        if (portL == 0x57) // передача данных в SD карту
+        {
+            if (is_SD_active)  WRITE_SD_BYTE(val);
+             return;
+            }
+
+        if (portL == 0x77) 
+        {
+         is_SD_active=((val & 0x01)==1);
+         gpio_put(SDCARD_PIN_CS,val & 0x02);
+         z_controler_cs = val; 
+         return;
+        }
     #endif
+
     #ifdef  RTC_NOVA
         if (portL  ==  0x88 ) {out_GSP(RTC_WRITE_OUT_88,  val); return;}//номер регистра часов
         if (portL  ==  0x89 ) {out_GSP(RTC_WRITE_OUT_89,  val); return;}//данные регистра часов
@@ -1339,10 +1419,26 @@ inline static void fast(extram_1ffd)(Z80 *cpu,uint16_t port16, uint8_t val)
 		if(port16 == 0x01FF){saa1099_write(1,val);return;}					
 		if(port16 == 0x00FF){saa1099_write(0,val);return;}
         #endif
-        #ifdef Z_CONTROLER 
+
+    #ifdef Z_CONTROLER 
         if (portL == 0x57) {out_GSP(ZC_WRITE_OUT_57,  val); return;}// передача данных в SD карту
         if (portL == 0x77) {out_GSP(ZC_WRITE_OUT_77,val);z_controler_cs = val; return;}//управление SD   SD_SPI_CS0_PIN val&0x02
-        #endif
+    #else    
+        if (portL == 0x57) // передача данных в SD карту
+        {
+            if (is_SD_active)  WRITE_SD_BYTE(val);
+             return;
+            }
+
+        if (portL == 0x77) 
+        {
+         is_SD_active=((val & 0x01)==1);
+         gpio_put(SDCARD_PIN_CS,val & 0x02);
+         z_controler_cs = val; 
+         return;
+        }
+    #endif
+
         #ifdef  RTC_NOVA
         if (portL  ==  0x88 ) {out_GSP(RTC_WRITE_OUT_88,  val); return;}//номер регистра часов
         if (portL  ==  0x89 ) {out_GSP(RTC_WRITE_OUT_89,  val); return;}//данные регистра часов
@@ -1423,10 +1519,26 @@ inline static void fast(extram_gmx)(Z80 *cpu,uint16_t port16, uint8_t val)
 		if(port16 == 0x01FF){saa1099_write(1,val);return;}					
 		if(port16 == 0x00FF){saa1099_write(0,val);return;}
         #endif
-        #ifdef Z_CONTROLER 
+
+    #ifdef Z_CONTROLER 
         if (portL == 0x57) {out_GSP(ZC_WRITE_OUT_57,  val); return;}// передача данных в SD карту
         if (portL == 0x77) {out_GSP(ZC_WRITE_OUT_77,val);z_controler_cs = val; return;}//управление SD   SD_SPI_CS0_PIN val&0x02
-        #endif
+    #else    
+        if (portL == 0x57) // передача данных в SD карту
+        {
+            if (is_SD_active)  WRITE_SD_BYTE(val);
+             return;
+            }
+
+        if (portL == 0x77) 
+        {
+         is_SD_active=((val & 0x01)==1);
+         gpio_put(SDCARD_PIN_CS,val & 0x02);
+         z_controler_cs = val; 
+         return;
+        }
+    #endif
+
         #ifdef  RTC_NOVA
         if (portL  ==  0x88 ) {out_GSP(RTC_WRITE_OUT_88,  val); return;}//номер регистра часов
         if (portL  ==  0x89 ) {out_GSP(RTC_WRITE_OUT_89,  val); return;}//данные регистра часов
@@ -1516,10 +1628,26 @@ inline static void fast(extram_p8)(Z80 *cpu, uint16_t port16, uint8_t val)
 		if(port16 == 0x01FF){saa1099_write(1,val);return;}					
 		if(port16 == 0x00FF){saa1099_write(0,val);return;}
         #endif
-        #ifdef Z_CONTROLER 
+
+    #ifdef Z_CONTROLER 
         if (portL == 0x57) {out_GSP(ZC_WRITE_OUT_57,  val); return;}// передача данных в SD карту
         if (portL == 0x77) {out_GSP(ZC_WRITE_OUT_77,val);z_controler_cs = val; return;}//управление SD   SD_SPI_CS0_PIN val&0x02
-        #endif
+    #else    
+        if (portL == 0x57) // передача данных в SD карту
+        {
+            if (is_SD_active)  WRITE_SD_BYTE(val);
+             return;
+            }
+
+        if (portL == 0x77) 
+        {
+         is_SD_active=((val & 0x01)==1);
+         gpio_put(SDCARD_PIN_CS,val & 0x02);
+         z_controler_cs = val; 
+         return;
+        }
+    #endif
+
         #ifdef  RTC_NOVA
         if (portL  ==  0x88 ) {out_GSP(RTC_WRITE_OUT_88,  val); return;}//номер регистра часов
         if (portL  ==  0x89 ) {out_GSP(RTC_WRITE_OUT_89,  val); return;}//данные регистра часов
@@ -1625,10 +1753,26 @@ inline static void fast(nova_256)(Z80 *cpu, uint16_t port16, uint8_t val)
 		if(port16 == 0x01FF){saa1099_write(1,val);return;}					
 		if(port16 == 0x00FF){saa1099_write(0,val);return;}
         #endif
-        #ifdef Z_CONTROLER 
+
+    #ifdef Z_CONTROLER 
         if (portL == 0x57) {out_GSP(ZC_WRITE_OUT_57,  val); return;}// передача данных в SD карту
         if (portL == 0x77) {out_GSP(ZC_WRITE_OUT_77,val);z_controler_cs = val; return;}//управление SD   SD_SPI_CS0_PIN val&0x02
-        #endif
+    #else    
+        if (portL == 0x57) // передача данных в SD карту
+        {
+            if (is_SD_active)  WRITE_SD_BYTE(val);
+             return;
+            }
+
+        if (portL == 0x77) 
+        {
+         is_SD_active=((val & 0x01)==1);
+         gpio_put(SDCARD_PIN_CS,val & 0x02);
+         z_controler_cs = val; 
+         return;
+        }
+    #endif
+
         #ifdef  RTC_NOVA
         if (portL  ==  0x88 ) {out_GSP(RTC_WRITE_OUT_88,  val); return;}//номер регистра часов
         if (portL  ==  0x89 ) {out_GSP(RTC_WRITE_OUT_89,  val); return;}//данные регистра часов
@@ -2190,16 +2334,11 @@ void init_rom_ram(uint8_t rom_x)
 	zx_vbuf_active = &zx_vbuf[0];
 
  return; // выход нафиг больше тут делать нечего
-
 break;
 
-case QUORUM1024:
-	    // zx_rom_bank[0]=&ROM_128QNova[0];//128k 
-	    // zx_rom_bank[1]=&ROM_48QNova[0*16384];//48k 
-		// zx_rom_bank[2]=&ROM_QtrNova[0*16384];//TRDOS 6.04
-	    // zx_rom_bank[3]=&ROM_QsmNova[0*16384];//NAVIGATOR
-        init_rom_ram_Q1024();
 
+case QUORUM1024:
+        init_rom_ram_Q1024();
    	zx_RAM_bank_active =0x00;
 	zx_RAM_bank_7ffd =0x00;
     zx_RAM_bank_1ffd =0x00;
@@ -2213,6 +2352,11 @@ case QUORUM1024:
  return; // выход нафиг больше тут делать нечего
 
 break;
+
+
+
+
+
 
 #ifndef NO_GMX
     case GMX2048 :
@@ -2236,11 +2380,11 @@ break;
 	break;
 //--------------------------
  case SPEC48:
-        zx_rom_bank[0]=&ROM_128K[0*16384];//128k 
+        zx_rom_bank[0]=&ROM_128K[0*16384];//128k заглушка не используется
 	    zx_rom_bank[1]=&ROM_48K_ORIGINAL[0*16384];//48k 
         if (conf.trdos_version==0) zx_rom_bank[2]=&ROM_TRDOS_504T[0*16384];//TRDOS 5.04T
         else zx_rom_bank[2]=&ROM_TRDOS_505D[0*16384];//TRDOS 5.05D
-        zx_rom_bank[3]=&ROM_Qsm[0*16384];//SERVICE PENTAGON //TODO
+        zx_rom_bank[3]=&ROM_Qsm[0*16384];//SERVICE PENTAGON  /// TODO     заглушка не используется
 		rom=1;
 	
 		if (rom_x ==0) // первый запуск при включении или hard reset
@@ -2522,27 +2666,10 @@ void init_zx_2_pix_buffer()
 	
 }
 
-
 //------------------------------------------
 extern uint16_t beepPWM;
-//------------------------------------------
-// реальный INT 50 HZ через таймер пико
-/* void zx_generator_int(void)
-{
-  // beepPWM = 0 ;// обнуление звука бипера на всякий случай
-	if (int_enable) return;
-    if (conf.turbo == 1) 
-    {
-   int_enable=true;// Генерация прерывания INT Z80  50Гц при TURBO
-   z80_int(&cpu_zx, Z_TRUE);
-} 
-   #ifdef LEDBLINK
- //   led_blink();
-    #endif
-} */
-//----------------------------------------
 uint8_t* active_screen_buf=NULL;
-
+//------------------------------------------
 // главный цикл выполнения команд Z80
 void fast(zx_machine_main_loop_start)()
 {
@@ -2600,6 +2727,37 @@ if (tap_loader_active && TapeStatus==TAPE_STOPPED)
 {
 if (Z80_PC(cpu_zx) == 0x0556 || Z80_PC(cpu_zx) == 0x056a) TAP_Play();
 }
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+///!!!!!!!!!!!!  с этим не работает автозагрузка дисков при старте и по SPACE в Пентагонах и так далее !!!!!!!!!!!!!!!!!
+		// tr-dos
+/* 
+		if ((zx_1ffd_lastOut & 0x02)== 0x00) // 0000 00x0  0x02 если не теневик Scorpion ZS 256
+        {
+	
+		if (!trdos) // если еще не в trdos то вход
+		{
+			if ((Z80_PCH(cpu_zx) == 0x3D) && (rom == 1 ))// trdos работает с BASIC48 D4 = 1     
+			//if ((Z80_PCH(z1->cpu) == 0x3D) && (rom != 3 ))// trdos работает с BASIC48 D4 = 1     
+			                                                                     
+			{
+			trdos = true;
+
+           rom=2;
+			zx_cpu_ram[0]=zx_rom_bank[2];// tr-dos
+			
+            }
+			
+		}
+	  
+     }
+	  
+		if (trdos) if ((Z80_PCH(cpu_zx) & 0xc0))// выход из trdos если в RAM
+		{
+		 trdos = false;
+         rom_select(); // переключение ПЗУ по портам  
+		} */
+///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 		// tr-dos
 
@@ -2628,8 +2786,6 @@ if (Z80_PC(cpu_zx) == 0x0556 || Z80_PC(cpu_zx) == 0x056a) TAP_Play();
 		 trdos = false;
          rom_select(); // переключение ПЗУ по портам  
 		}
-///////////////////////////////////////////////////////////////////////////////
-
 		//=======================================================================================
 			// Если нажали клавишу NMI // QUORUM // SCORPION
 		//	if (main_nmi_key)
@@ -2752,13 +2908,8 @@ if (   (inx_tick_screen<32) &&  (int_enable))
 	
 		inx_tick_screen+=dt_cpu;//Увеличиваем на количество тактов Z80 на текущую выполненную команду.
 
-   //   if (trdos) WD1793_Execute();
-
-
-	 	// начало 
+ 	 	// начало 
 		 inx_tick_screen_ff=inx_tick_screen;
-
-
 
 		 if (inx_tick_screen>=  ticks_per_frame)      // Если прошла 1/50 сек, 71680 тактов процессора Z80
 			{
@@ -2844,7 +2995,7 @@ if (   (inx_tick_screen<32) &&  (int_enable))
 #ifdef TEST
 if (wait_msg !=0)
 {
-		if (((y >= 240-12) && (y <= 240)))
+		if (((y >= 240-20) && (y <= 240)))
 			{
 				int i_c;
 				if (x < dx)
@@ -2956,6 +3107,7 @@ void init_mashine_and_extram(uint8_t config_mashine) // инициализаци
     machine_Pentagon_1024(&cpu_zx);
 		break; //
 	case SCORP256:
+      //  main_nmi_key = true;
         machine_Scorpion_256(&cpu_zx);   
 		break; //
  
@@ -2966,12 +3118,18 @@ void init_mashine_and_extram(uint8_t config_mashine) // инициализаци
     //  #endif    
 
 	case NOVA256:
+      //    main_nmi_key = true;
           machine_NOVA_256(&cpu_zx);
 		break; //
     
     case QUORUM1024:
         machine_Quorum1024(&cpu_zx);
         break;
+
+    case QUORUM1024:
+        machine_Quorum1024(&cpu_zx);
+        break;
+
 
 	case PENT8M:
           machine_MurmoZavr(&cpu_zx);

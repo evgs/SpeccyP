@@ -66,7 +66,7 @@ void draw_symbol(int x,int y,int symb,color_t colorText,color_t colorBg)
 
 
 
-void draw_text(int x,int y, const char* text,color_t colorText,color_t colorBg)
+void draw_text(int x,int y,const char* text,color_t colorText,color_t colorBg)
 {
     while (*text) {
         if (x >= scr_W) break;

@@ -1,6 +1,7 @@
 #include "config.h" 
 
 #include <stdio.h>
+#include "SpeccyP.h"
 
 #include "SpeccyP.h"
 
@@ -266,27 +267,25 @@ extern ZX_Input_t zx_input;
 // меню ram
 ZxMachineVariant __in_flash() variants[] = 
 {
-    { " Pentagon 128     ", false , PENT128 },
-    { " ZX Spectrum 48   ", false , SPEC48 },
-    { " Pentagon 512     ", true , PENT512 },
-    { " Pentagon 1024    ", true , PENT1024 },
-    { " Scorpion ZS 256  ", true , SCORP256 },
- #ifdef NO_GMX
-    { " No  ScorpionGMX  ", true , GMX2048 },
- #else         
-    { " ScorpionGMX 2048 ", true , GMX2048 },
- #endif
-    { " Navigator 256    ", true , NOVA256 },
-    { " MurmoZavr 8000K  ", true , PENT8M },
-    { " Pentagon 512CASH ", true , PENT_512CASH },
-    { " Quorum 1024      ", true , QUORUM1024 },
+    { " Pentagon 128     ", 0 , PENT128 },
+    { " ZX Spectrum 48   ", 0 , SPEC48 },
+    { " Pentagon 512     ", 2 , PENT512 },
+    { " Pentagon 1024    ", 2 , PENT1024 },
+    { " Scorpion ZS 256  ", 1 , SCORP256 },
+    { " ScorpionGMX 2048 ", 2 , GMX2048 },
+    { " Navigator 256    ", 1 , NOVA256 },
+    { " MurmoZavr 8000K  ", 2 , PENT8M },
+    { " Pentagon 512CASH ", 2 , PENT_512CASH },
+    { " Quorum 1024      ", 2 , QUORUM1024 },
 }; 
 
 #define ZX_VARIANTS_TOTAL (sizeof(variants) / sizeof(ZxMachineVariant))
 
 
 static int variantsCount = 0;
-static char *menu_machineNames[16]; //TODO fix hardcode
+//static char *menu_machineNames[16]; //TODO fix hardcode
+static const char *menu_machineNames[16];
+
 static int menu_id[16]; //TODO fix hardcode
 
 int getZxMachineVariantCount() {
@@ -296,22 +295,27 @@ int getZxMachineVariantCount() {
 void filterZxMachines(bool psram) {
     for (int i = 0; i < ZX_VARIANTS_TOTAL; i++) {
         //skip ram-hungry machine if no PSRAM 
-        if ((!psram) && (variants[i].NeedPSRAM)) continue;
+        #ifdef RP2350_256K
+        if ((!psram) && (variants[i].NeedPSRAM>=2)) continue;
+        #else
+        if ((!psram) && (variants[i].NeedPSRAM>=1)) continue;
+        #endif
         menu_machineNames[variantsCount] = variants[i].name;
         menu_id[variantsCount] = variants[i].id;
         variantsCount++;
     }
-}
+} 
 
 
-char ** getZxMachineNames() {
-    return menu_machineNames;
+
+
+const char ** getZxMachineNames() {  
+    return menu_machineNames;   
 }
+
 int * getZxMachineIds() {
     return menu_id;
 }
-
-
 
 const ZxMachineVariant  *getZxMachineVariant(int machineIndex) {
     for (int i = 0; i < ZX_VARIANTS_TOTAL; i++) {
@@ -323,7 +327,7 @@ const ZxMachineVariant  *getZxMachineVariant(int machineIndex) {
 }
 
 
-#ifdef RP2350_256K
+/* #ifdef RP2350_256K
 	// меню menu_ram_48_128_256
 	char __in_flash() *menu_ram_128_48[4]={
         //char*  menu_ram[7]={	
@@ -332,6 +336,7 @@ const ZxMachineVariant  *getZxMachineVariant(int machineIndex) {
         " Scorpion ZS 256  ",
         " Navigator 256    ",
        };
+
 #else
 	// меню menu_ram_128_48
 	char __in_flash() *menu_ram_128_48[2]={
@@ -339,7 +344,7 @@ const ZxMachineVariant  *getZxMachineVariant(int machineIndex) {
         " Pentagon 128     ",
         " ZX Spectrum 48   ",
        };
-#endif
+#endif */
 
 
 	// меню sound
@@ -1052,6 +1057,8 @@ case BOARD_PSRAM_NOSUPORT:
     if (getZxMachineVariant(conf.mashine)->NeedPSRAM && !psram_avaiable) conf.mashine = PENT128;
 
 
+
+
         #ifdef TEST_DEBUG
 
 #ifdef GENERAL_SOUND
@@ -1340,68 +1347,10 @@ void Message_Print()
             break;
         }
         }
-//=========================================================================
-// MAIN
-int fast(main)(void){  
-
-    init_pico();
-  //  sleep_ms(100);
-
-
-// Инициализация последовательного порта
-  //  stdio_init_all(); // для автоматической загрузки прошивки RP2350
-
-    init_and_info();
-
-//-----------------------------------------------------------------    
-// если одна плата без GS 
-    #ifndef  GENERAL_SOUND     
-    select_audio(); // переключение режимов вывода звука 
- 	int hz = 96000;	//44000 //44100 //96000 //22050
-	repeating_timer_t timer_audio;
-	// negative timeout means exact delay (rather than delay between callbacks)
-    // f = 1 / T = 1 / 9 μs = 111111 Гц
-    // f = 1 / T = 1 / -21 μs = 47619Гц	-0,79% Гц
- 	if (!add_repeating_timer_us(AY_SAMPLE_RATE, AY_timer_callback, NULL, &timer_audio)) return 1;// -10  частота ноты До 237Гц  нужно 240,0058 Гц
-    #endif
-
-	repeating_timer_t zx_flash_timer;
-	//hz=2;
-	if (!add_repeating_timer_us(-1000000 / 2/*Hz*/, zx_flash_callback, NULL, &zx_flash_timer)) {
-	//	G_PRINTF_ERROR("Failed to add zx flash timer\n");
- //   gpio_put(25,1);//error
-		return 1;
-	}
-//---------------------------------------------------------
-// INT generator 50Hz
-/*  	repeating_timer_t int_timer; 
-     // hz=50;
-	if (!add_repeating_timer_us(-1000000 / 50, zx_int, NULL, &int_timer))
-     {
-		//G_PRINTF_ERROR("Failed to add INT timer\n");
-    //    gpio_put(25,1);//error
-		return 1;
-	}   
-    */
-//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-
- // is_new_screen = true;
-
-    
-	multicore_launch_core1(ZXThread);
-
-    disk_autorun ();
- //   wait_msg = 5000;// сообщения внизу и громкость время вывода
- //   msg_bar = 0;
-//######################
-//   основной цикл
-//######################
-
-
-    while (1)
-    {
-        if (wait_msg !=0) Message_Print();
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+void keyboard_and_other(void)
+{
+       if (wait_msg !=0) Message_Print();
 //---------------------------------------------
 // опрос джоя
        if (conf.joyMode == 0)
@@ -1617,10 +1566,10 @@ int fast(main)(void){
             //   is_new_screen = false;
            }
             }
-//######################################################
-// Работа эмулятора
-//######################################################
-          if (!is_menu_mode)
+            // ######################################################
+            //  Работа эмулятора
+            // ######################################################
+            if (!is_menu_mode)
             { // Emulation mode
                 zx_machine_enable_vbuf(true);
                 if (im_z80_stop)
@@ -1635,13 +1584,65 @@ int fast(main)(void){
 
                 convert_kb_u_to_kb_zx(&kb_st_ps2, zx_input.kb_data);
 
-                joy_scan();// переопределление kempston joy на клавиши 
+                joy_scan(); // переопределление kempston joy на клавиши
 
             } // Emulation mode end
+    }
+}
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++        
+//=========================================================================
+// MAIN
+int fast(main)(void){  
+
+    init_pico();
+
+    init_and_info();
+
+//-----------------------------------------------------------------    
+// если одна плата без GS 
+    #ifndef  GENERAL_SOUND     
+    select_audio(); // переключение режимов вывода звука 
+ 	int hz = 96000;	//44000 //44100 //96000 //22050
+	repeating_timer_t timer_audio;
+	// negative timeout means exact delay (rather than delay between callbacks)
+    // f = 1 / T = 1 / 9 μs = 111111 Гц
+    // f = 1 / T = 1 / -21 μs = 47619Гц	-0,79% Гц
+ 	if (!add_repeating_timer_us(AY_SAMPLE_RATE, AY_timer_callback, NULL, &timer_audio)) return 1;// -10  частота ноты До 237Гц  нужно 240,0058 Гц
+    #endif
+
+	repeating_timer_t zx_flash_timer;
+	//hz=2;
+	if (!add_repeating_timer_us(-1000000 / 2/*Hz*/, zx_flash_callback, NULL, &zx_flash_timer)) {
+	//	G_PRINTF_ERROR("Failed to add zx flash timer\n");
+ //   gpio_put(25,1);//error
+		return 1;
+	}
+//---------------------------------------------------------
+// INT generator 50Hz
+/*  	repeating_timer_t int_timer; 
+     // hz=50;
+	if (!add_repeating_timer_us(-1000000 / 50, zx_int, NULL, &int_timer))
+     {
+		//G_PRINTF_ERROR("Failed to add INT timer\n");
+    //    gpio_put(25,1);//error
+		return 1;
+	}   
+    */
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+	multicore_launch_core1(ZXThread);
+
+    disk_autorun ();
+
+//######################
+//   основной цикл
+//######################
 
 
-        } 
-
+    while (1)
+    {
+           keyboard_and_other();
+           
            zx_machine_input_set(&zx_input);
       
            led_trdos();// мигаие led 
@@ -1686,7 +1687,7 @@ void file_select_cpm(void) //
 	is_menu_mode = true;
 	
     is_new_screen = true;
-	//     MenuTRDOS(); // меню выбора и подключения образов trd
+	//     MenuTRDOS(); // меню выбора и подключения образов cpm
 	uint8_t Drive = MenuBox_trd(64, 54, 22, 7, "Drive CP/M", 4, 0, 1);
 	if (Drive < 5)
 	{
@@ -1698,7 +1699,7 @@ void file_select_cpm(void) //
         file_type[Drive] = CP_M;
         OpenCPMFile(conf.activefilename,Drive);
 
-        write_protected = false; // защита записи отключена для TRD
+        write_protected = false; // защита записи отключена для CP/M
 	}
 
 	draw_main_window(); // восстановление текста
@@ -1709,6 +1710,8 @@ void file_select_cpm(void) //
 
 
 }
+////// CP/M end
+
 //++++++++++++++++++++++++++++++++++++++++++
 //================================================================
 void  config_init(void)
@@ -2106,15 +2109,19 @@ void setup_zx(void)
         if (numsetup == M_RAM) {
             //todo get menu index
             int count = getZxMachineVariantCount();
-            uint8_t x = MenuBox(90, 52, 17, count, "Model & RAM", getZxMachineNames(), count, 0 /*conf.mashine*/, 1);
-            if (x==0xff) continue;
-            #ifdef NO_GMX
-            if (x==0x05) continue;
-            #endif
-            conf.mashine  = getZxMachineIds()[x];
-            init_mashine_and_extram(conf.mashine);
-            continue;
-        }
+            uint8_t x = MenuBox(90, 52, 17, count, "Model & RAM", (char **)getZxMachineNames(), count, 0 /*conf.mashine*/, 1);
+
+               if (x==0xff) continue;
+               #ifdef NO_GMX
+               if (x==0x05) continue;
+               #endif
+               conf.mashine  = getZxMachineIds()[x];
+
+                init_mashine_and_extram(conf.mashine);
+                continue;
+            }
+      
+        
 
         #if !defined(GENERAL_SOUND) && !defined(HDMI_HSTX)
         if (numsetup == M_SOUND)
@@ -2906,7 +2913,7 @@ if (size_psram==0)
 
           size_psram= get_psram_size();
       
-//size_psram=0;
+//size_psram=0;  test no psram
  if (size_psram==0) 
 {
     type_psram = NOT_PSRAM;// PSRAM not found

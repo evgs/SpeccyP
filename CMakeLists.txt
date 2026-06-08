@@ -36,10 +36,17 @@ endfunction()
 # Устанавливаем параметры платы и чипа и так далее
 set(PICO_BOARD pico2 CACHE STRING "Board type")
 
-#set(DEBUG ON)
+set(DEBUG ON)
 
-# == Конфигурация  SpeccyP ==
-set (BASE_VERSION "1.6.5 ${GIT_VERSION}")
+set(VERSION_MAJOR 1)
+set(VERSION_MINOR 6)
+set(VERSION_PATCH 6)
+# Базовая версия (оставлено для совместимости)
+set(BASE_VERSION "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
+## Номер версии конфигурационного файла
+math(EXPR CONFIG_VERSION_VALUE "2000 + ${VERSION_MAJOR}*100 + ${VERSION_MINOR}*10 + ${VERSION_PATCH}")
+
+# == Конфигурация SpeccyP ==
 
 # Конфигурация сборки (можно задать через -DSPECCY_CONFIG=... и -DM_BOARD=...)
 # SPECCY_CONFIG: SPECCY | SPECCY_WSZERO1  | SPECCY_WSZERO2  | GSP_FULL | GSP_M2  |GSP_LITE
@@ -114,7 +121,7 @@ else()
     set(SPECCY_CONFIG "SPECCY")
     set(SPECCY_CONFIG_DEFINITIONS 
 
-        CPU_MHZ=378## MHz
+        CPU_MHZ=378 ## MHz
         FLASH_MAX_FREQ_MHZ=166
         PSRAM_MAX_FREQ_MHZ=166
         TEST_DEBUG #
@@ -333,7 +340,7 @@ set (FATFS_SPI spi0)
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE
 ## Номер версии конфигурационного файла
-CONFIG_VERSION=270527
+CONFIG_VERSION=${CONFIG_VERSION_VALUE}
 CPU_KHZ=CPU_MHZ*1000
 PICOBUS_SPEED=20   #// 160000000 = 20MB/s // 80000000 = 10MB/s
 POWER_MODE_WEACT=1
