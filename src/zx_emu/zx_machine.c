@@ -3119,12 +3119,6 @@ void init_mashine_and_extram(uint8_t config_mashine) // инициализаци
         machine_Quorum1024(&cpu_zx);
         break;
 
-    case QUORUM1024:
-        main_loop_DOS = dos_quorum;
-        machine_Quorum1024(&cpu_zx);
-        break;
-
-
 	case PENT8M:
           machine_MurmoZavr(&cpu_zx);
 		break; //
