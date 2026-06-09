@@ -674,6 +674,7 @@ static uint8_t envelope_ay_count = 0;       // Текущий шаг огиба�
  */
 uint8_t fast(AY_get_reg)()
 {
+    if (TSFM_MaskReadyBit==0x7f) return TSFM_MaskReadyBit; // TODO
     return reg_ay0[N_sel_reg];
 }
 
@@ -858,6 +859,7 @@ static uint8_t envelope_ay1_count = 0;      // Текущий шаг огиба�
  */
 uint8_t fast(AY_get_reg1)()
 {
+     if (TSFM_MaskReadyBit==0x7f) return TSFM_MaskReadyBit; // TODO
     return reg_ay1[N_sel_reg_1];
 }
 

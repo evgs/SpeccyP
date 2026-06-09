@@ -577,9 +577,10 @@ uint8_t MenuBox_trd(uint8_t xPos, uint8_t yPos, uint8_t lPos, uint8_t hPos,  cha
     if (kb_st_ps2.u[0] & KB_U0_Z) // Z-Eject Disk
     {
       //  memset(str,'_',12); // заполнить первые 12 байт символом '_'
-      memset(conf.Disks[cPos], 0, DIRS_DEPTH*(LENF));
+        memset(conf.Disks[cPos], 0, DIRS_DEPTH*(LENF));
       memset(conf.DiskName[cPos], 0, LENF);                                                                      // char Disks[4][160];
       draw_text_len(xPos + 3 * FONT_W, yPos + 8 + 10 * cPos, conf.Disks[cPos], CL_PAPER, CL_LT_CYAN, L_CURSOR); // курсор надпись файла
+      WD1793_eject();
     }
 // создание новог диска trd
  /*  if (kb_st_ps2.u[0] & KB_U0_N) // N-New TRD image
@@ -870,11 +871,11 @@ void init_menu_advanced() {
     else
         strcpy(menu_advanced_strings[4], " Tape Load NORMAL ");
 
-   // sprintf(menu_advanced_strings[5], " Voltage  %4d V ",table_voltage[conf.voltage]* 10 );
-    sprintf(menu_advanced_strings[5], " Voltage   %.2f V ",table_voltage[conf.voltage]/ 100.0 );
-    
-    strcpy(menu_advanced_strings[6], " Save config      ");
-    strcpy(menu_advanced_strings[7]," Return           ");
+       sprintf(menu_advanced_strings[5], " Voltage   %.2f V ",table_voltage[conf.voltage]/ 100.0 );
+       sprintf(menu_advanced_strings[6], " Freq CPU %d MHz ",conf.cpu_freq);
+
+    strcpy(menu_advanced_strings[7], " Save config      ");
+    strcpy(menu_advanced_strings[8]," Return           ");
 }
 
 
@@ -937,8 +938,6 @@ wait_enter(); // ожидание отпускания enter
 
       switch (cPos)
       {
-
-
           case 0:// скорость мыши -
           if (conf.mouse_dpi<=1) conf.mouse_dpi=1;
              else conf.mouse_dpi--;
@@ -960,6 +959,7 @@ wait_enter(); // ожидание отпускания enter
           draw_text(xPos,yPos+10*4,menu_advanced_strings[cPos],  CL_BLACK, CL_LT_CYAN);
           break;
 
+          #ifdef PICO_RP2350 
           case 5:// voltage
           if (conf.voltage==15) conf.voltage=15;
              else conf.voltage--;
@@ -967,6 +967,13 @@ wait_enter(); // ожидание отпускания enter
            draw_text(xPos,yPos+10*5,menu_advanced_strings[cPos],  CL_BLACK, CL_LT_CYAN); 
            break;   
 
+          case 6:// cpu freq
+             if (conf.cpu_freq==252) conf.cpu_freq=252;
+             else conf.cpu_freq -= 126;
+             init_menu_advanced();
+           draw_text(xPos,yPos+10*6,menu_advanced_strings[cPos],  CL_BLACK, CL_LT_CYAN); 
+           break;  
+          #endif  
 
       }
    
@@ -1000,12 +1007,22 @@ wait_enter(); // ожидание отпускания enter
           draw_text(xPos,yPos+10*4,menu_advanced_strings[cPos],  CL_BLACK, CL_LT_CYAN);
           break;
 
+           #ifdef PICO_RP2350 
           case 5:// voltage
           if (conf.voltage==19) conf.voltage=19;
              else conf.voltage++;
            init_menu_advanced();
            draw_text(xPos,yPos+10*5,menu_advanced_strings[cPos],  CL_BLACK, CL_LT_CYAN); 
            break;   
+
+          case 6:// cpu freq          
+             if (conf.cpu_freq==504) conf.cpu_freq=504;
+             else conf.cpu_freq += 126;
+             init_menu_advanced();
+           draw_text(xPos,yPos+10*6,menu_advanced_strings[cPos],  CL_BLACK, CL_LT_CYAN); 
+           break;  
+           #endif 
+
 
       default:
         break;
@@ -1042,25 +1059,30 @@ wait_enter(); // ожидание отпускания enter
        draw_text(xPos,yPos+10*4,menu_advanced_strings[cPos],  CL_BLACK, CL_LT_CYAN);
        continue;
 
+          #ifdef PICO_RP2350 
           case 5:// voltage
            draw_text(xPos,yPos+10*5,menu_advanced_strings[cPos],  CL_WHITE, CL_LT_RED); 
-       //    g_delay_ms(100);
            #ifdef PICO_RP2350 
            vreg_set_voltage(conf.voltage);
            #endif
            g_delay_ms(300);
            draw_text(xPos,yPos+10*5,menu_advanced_strings[cPos],  CL_BLACK, CL_LT_CYAN); 
           continue;// break;   
+          
+          case 6:// cpu freq
+           draw_text(xPos,yPos+10*6,menu_advanced_strings[cPos],  CL_WHITE, CL_LT_RED); 
+        //   vreg_set_voltage(conf.voltage);           
+           g_delay_ms(300);
+           draw_text(xPos,yPos+10*6,menu_advanced_strings[cPos],  CL_BLACK, CL_LT_CYAN); 
+          continue;// break;   
+          #endif
 
 
-
-
-
-       case 6:// Save config
+       case 7:// Save config
        save_config();
        break;
 
-      case 7:// Return menu
+      case 8:// Return menu
       return 0xff; // ESC exit
      }
 

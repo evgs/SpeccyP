@@ -40,11 +40,11 @@ set(DEBUG ON)
 
 set(VERSION_MAJOR 1)
 set(VERSION_MINOR 6)
-set(VERSION_PATCH 6)
+set(VERSION_PATCH 7)
 # Базовая версия (оставлено для совместимости)
 set(BASE_VERSION "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
 ## Номер версии конфигурационного файла
-math(EXPR CONFIG_VERSION_VALUE "2000 + ${VERSION_MAJOR}*100 + ${VERSION_MINOR}*10 + ${VERSION_PATCH}")
+math(EXPR CONFIG_VERSION_VALUE "1000 + ${VERSION_MAJOR}*100 + ${VERSION_MINOR}*10 + ${VERSION_PATCH}")
 
 # == Конфигурация SpeccyP ==
 
@@ -80,10 +80,9 @@ option(USB_SERIAL "USB CDC console (USB HID Host отключается)" OFF)
 # Определяем опции в зависимости от конфигурации 
 if(SPECCY_CONFIG STREQUAL "GSP_FULL")
     set(SPECCY_CONFIG_DEFINITIONS       
-        CPU_MHZ=378 # 378 MHz
+        CPU_MHZ=378 
         FLASH_MAX_FREQ_MHZ=166
         PSRAM_MAX_FREQ_MHZ=166
-        HDMI_DIV=1.5 # hdmi 60Hz
         TEST_DEBUG #
         GENERAL_SOUND 
         TURBOSOUND
@@ -95,10 +94,9 @@ if(SPECCY_CONFIG STREQUAL "GSP_FULL")
      
 elseif(SPECCY_CONFIG STREQUAL "GSP_LITE")
     set(SPECCY_CONFIG_DEFINITIONS  
-        CPU_MHZ=378 # 378 MHz
+        CPU_MHZ=378 
         FLASH_MAX_FREQ_MHZ=166
         PSRAM_MAX_FREQ_MHZ=166
-        HDMI_DIV=1.5 # hdmi 60Hz
         TEST_DEBUG #
         GENERAL_SOUND 
         TURBOSOUND
@@ -107,10 +105,9 @@ elseif(SPECCY_CONFIG STREQUAL "GSP_LITE")
 ###
 elseif(SPECCY_CONFIG STREQUAL "SPECCY_WSZERO")
     set(SPECCY_CONFIG_DEFINITIONS  
-        CPU_MHZ=378 MHz
+        CPU_MHZ=252
         FLASH_MAX_FREQ_MHZ=66
         PSRAM_MAX_FREQ_MHZ=100
-        HDMI_DIV=1.5 # hdmi 60Hz*378
         TEST_DEBUG #
     )
       set(GENERAL_SOUND OFF)
@@ -121,11 +118,10 @@ else()
     set(SPECCY_CONFIG "SPECCY")
     set(SPECCY_CONFIG_DEFINITIONS 
 
-        CPU_MHZ=378 ## MHz
-        FLASH_MAX_FREQ_MHZ=166
+        CPU_MHZ=378###378
+        FLASH_MAX_FREQ_MHZ=66
         PSRAM_MAX_FREQ_MHZ=166
         TEST_DEBUG #
-        HDMI_DIV=1.5 # hdmi 60Hz/378
     )
      set(GENERAL_SOUND OFF) 
 endif()
@@ -199,29 +195,6 @@ if(HDMI_HSTX AND NOT M_BOARD STREQUAL "MURM2")
     message(FATAL_ERROR
         "HDMI_HSTX требует M_BOARD=MURM2 (HSTX выводится на GPIO 12-19). "
         "У M_BOARD=${M_BOARD} HDMI разведён на других пинах.")
-endif()
-
-if(HDMI_HSTX)
-    # HSTX хочет целочисленный делитель clk_sys в свой 126 МГц домен
-    # пиксельклока. CPU_MHZ выставляется выше через SPECCY_CONFIG_DEFINITIONS;
-    # пересчитываем его в MODE_HSTX_CLK_DIV (504/4=126, 252/2=126 и т.д.).
-    string(REGEX MATCH "CPU_MHZ=([0-9]+)" _cpu_mhz_match "${SPECCY_CONFIG_DEFINITIONS}")
-    set(_cpu_mhz_value "${CMAKE_MATCH_1}")
-    if(_cpu_mhz_value EQUAL 504)
-        set(HSTX_CLK_DIV 4)
-    elseif(_cpu_mhz_value EQUAL 378)
-        set(HSTX_CLK_DIV 3)
-    elseif(_cpu_mhz_value EQUAL 252)
-        set(HSTX_CLK_DIV 2)
-    elseif(_cpu_mhz_value EQUAL 126)
-        set(HSTX_CLK_DIV 1)
-    else()
-        message(FATAL_ERROR
-            "Для HDMI_HSTX нужен CPU_MHZ, делящийся на 126 нацело "
-            "(126/252/378/504); получено ${_cpu_mhz_value}.")
-    endif()
-    message(STATUS "HDMI_HSTX: clk_sys=${_cpu_mhz_value} MHz, "
-            "MODE_HSTX_CLK_DIV=${HSTX_CLK_DIV}")
 endif()
 
 # Звук: по умолчанию идёт через драйвер audio_i2s (PIO). При
@@ -307,7 +280,7 @@ if(HDMI_HSTX)
     )
     target_compile_definitions(${PROJECT_NAME} PRIVATE
         HDMI_HSTX=1
-        MODE_HSTX_CLK_DIV=${HSTX_CLK_DIV}
+       ### MODE_HSTX_CLK_DIV=${HSTX_CLK_DIV}
         # Полярность дифпар приёмника. PCB M2 разводит CLK- на GPIO12
         # (чётный), CLK+ на GPIO13 (нечётный). Ветка драйвера по
         # умолчанию (без HSTX_INVERT_DIFFPAIRS) укладывает полярность
@@ -341,7 +314,7 @@ set (FATFS_SPI spi0)
 target_compile_definitions(${PROJECT_NAME} PRIVATE
 ## Номер версии конфигурационного файла
 CONFIG_VERSION=${CONFIG_VERSION_VALUE}
-CPU_KHZ=CPU_MHZ*1000
+###CPU_KHZ=CPU_MHZ*1000
 PICOBUS_SPEED=20   #// 160000000 = 20MB/s // 80000000 = 10MB/s
 POWER_MODE_WEACT=1
 VOLTAGE_RP2040=VREG_VOLTAGE_1_30

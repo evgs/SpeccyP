@@ -5,11 +5,14 @@
 #include "stdbool.h"
 
 #include "zx_machine.h"
+#include "../wd1793.h"
+
 #include "../screen_util.h"
 #include "util.h"
 #include "../aySoft.h"
 #include "../util_tap.h"
 #include "disassembler.h"
+
 
 // rom
 #include "rom/rom48original.h"//rom 48k original zx spectrum 48
@@ -2557,8 +2560,8 @@ void zx_machine_init()
      init_mashine_and_extram(conf.mashine);// <= это уже тут   machine_Pentagon_128(&cpu_zx);  // инициализация процессора
    
       z80_power(&cpu_zx, Z_TRUE);// Включаем питание машины
-  z80_instant_reset(&cpu_zx);  // Включаем питание машины
-     zx_machine_reset(0);// 0-первый запуск  1- запуск trd по SPACE  3-просто reset в BASIC128
+      z80_instant_reset(&cpu_zx);  // Включаем питание машины
+      zx_machine_reset(0);// 0-первый запуск  1- запуск trd по SPACE  3-просто reset в BASIC128
 
   
 };
@@ -2585,14 +2588,25 @@ void zx_machine_reset(uint8_t rom_x)
     zx_0000_lastOut = 0x00;// QUORUM
     
     zx_cpu_ram[3]==zx_ram_bank[zx_RAM_bank_active];
+
+ //   strcpy(conf.activefilename, conf.Disks[0]);// disk A   
     WD1793_Init();
 
    //memset(&RAM,0x00, 131072);	// стирание памяти 128kB
     cash_f = 0;// отключение кеш для Пентагон 512 CASH
 
     seekbuf =0;// обнуление счетчика tape при сбросе
-    tap_loader_active = false;
-    enable_tape = false;
+    // в Кворум в режиме CP/M при роковом стечении обстоятельств 
+    // может быть ошибка связанная с перехватом точек входа TAPE LOADER
+    // используемых для работы FAST загрузки !!!  TODO
+ 	if (conf.mashine==QUORUM1024) conf.tape_mode = 1; 
+    if (conf.tape_mode == 0) {
+	   	enable_tape = true;
+		tap_loader_active = false;
+	} else {
+		enable_tape = false;
+		tap_loader_active = true;
+	} 
     TapeStatus = TAPE_STOPPED;
     init_vol_ay(); 
 
@@ -2665,8 +2679,77 @@ void init_zx_2_pix_buffer()
 	}
 	
 }
+//===========================================================
+//--------------------------------------------------
+// отдельные обработчики DOS для определенных машин
+//--------------------------------------------------
+void (*main_loop_DOS)(void);   // Указатель на функцию DOS
+// tr-dos normal
+void fast(dos_default)(void)
+{
+		if (!trdos) // если еще не в trdos то вход
+		{
+			if ((Z80_PCH(cpu_zx) == 0x3D) && ((zx_7ffd_lastOut & 0x10) == 0x10))// trdos работает с BASIC48 D4 = 1     rom =1 не выставляется при старте ??? TODO                                                                     
+			{
+			trdos = true;
+            rom=2;
+			zx_cpu_ram[0]=zx_rom_bank[2];// tr-dos
+            }	
+		}
+        if (trdos) if ((Z80_PCH(cpu_zx) & 0xc0))// выход из trdos если в RAM
+		{
+		 trdos = false;
+         rom_select(); // переключение ПЗУ по портам  
+		}
 
-//------------------------------------------
+        if (trdos) WD1793_Execute();
+}
+// tr-dos scorpion
+void fast(dos_scorpion)(void)
+{
+		if ((zx_1ffd_lastOut & 0x02)== 0x00) // 0x02 если не теневик у Scorpion есть доступ к портам TR-DOS в ROM S.Monitor 
+      {
+	
+		if (!trdos) // если еще не в trdos то вход
+		{
+			if ((Z80_PCH(cpu_zx) == 0x3D) && ((zx_7ffd_lastOut & 0x10) == 0x10))// trdos работает с BASIC48 D4 = 1     rom =1 не выставляется при старте ??? TODO                                                                     
+			{
+			trdos = true;
+            rom=2;
+			zx_cpu_ram[0]=zx_rom_bank[2];// tr-dos
+            }	
+		}
+      }  
+        if (trdos) if ((Z80_PCH(cpu_zx) & 0xc0))// выход из trdos если в RAM
+		{
+		 trdos = false;
+         rom_select(); // переключение ПЗУ по портам  
+		}
+      
+        else if (trdos) WD1793_Execute();
+}
+// dos Quorum
+void fast(dos_quorum)(void)
+{
+		if (!trdos) // если еще не в trdos то вход
+		{
+			if ((Z80_PCH(cpu_zx) == 0x3D) && ((zx_7ffd_lastOut & 0x10) == 0x10))// trdos работает с BASIC48 D4 = 1     rom =1 не выставляется при старте ??? TODO                                                                     
+			{
+			trdos = true;
+            rom=2;
+			zx_cpu_ram[0]=zx_rom_bank[2];// tr-dos
+            }	
+		}
+        if (trdos) if ((Z80_PCH(cpu_zx) & 0xc0))// выход из trdos если в RAM
+		{
+		 trdos = false;
+         rom_select(); // переключение ПЗУ по портам  
+		}
+        
+        WD1793_Execute(); // Кворум всегда есть доступ к портам DOS
+}
+//=======================================================================================
+
 extern uint16_t beepPWM;
 uint8_t* active_screen_buf=NULL;
 //------------------------------------------
@@ -2687,7 +2770,7 @@ void fast(zx_machine_main_loop_start)()
     uint8_t dt_cpu;
 	uint64_t d_dst_time_ticks=0; // Количесто тактов реального процессора на текущую выполненную команду Z80
 	uint64_t t0_time_ticks=0;    // Количество реальных тактов процессора после запуска машины Z80
-    ticks_per_cycle=Z80_3500;//
+    ticks_per_cycle=cpu_pico_khz/3500;//
 	//ticks_per_frame=71680 ;// 71680- Пентагон //70908 - 128 +2A
 
 	systick_hw->csr = 0x05;
@@ -2737,7 +2820,7 @@ if (Z80_PC(cpu_zx) == 0x0556 || Z80_PC(cpu_zx) == 0x056a) TAP_Play();
 	
 		if (!trdos) // если еще не в trdos то вход
 		{
-			if ((Z80_PCH(cpu_zx) == 0x3D) && (rom == 1 ))// trdos работает с BASIC48 D4 = 1     
+			if ((Z80_PCH(cpu_zx) == 0x3D) && (rom == 1 ))// trdos работает с BASIC48 D4 = 1     rom =1 не выставляется при старте ??? TODO
 			//if ((Z80_PCH(z1->cpu) == 0x3D) && (rom != 3 ))// trdos работает с BASIC48 D4 = 1     
 			                                                                     
 			{
@@ -2757,90 +2840,17 @@ if (Z80_PC(cpu_zx) == 0x0556 || Z80_PC(cpu_zx) == 0x056a) TAP_Play();
 		 trdos = false;
          rom_select(); // переключение ПЗУ по портам  
 		} */
-///////////////////////////////////////////////////////////////////////////////
+
+
+          main_loop_DOS();
+
+
+//=======================================================================================	
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
-		// tr-dos
-
-//		if ((zx_1ffd_lastOut & 0x02)== 0x00) // 0000 00x0  0x02 если не теневик 
-//        {
-	
-		if (!trdos) // если еще не в trdos то вход
-		{
-			if ((Z80_PCH(cpu_zx) == 0x3D) && (rom == 1 ))// trdos работает с BASIC48 D4 = 1     
-			//if ((Z80_PCH(z1->cpu) == 0x3D) && (rom != 3 ))// trdos работает с BASIC48 D4 = 1     
-			                                                                     
-			{
-			trdos = true;
-
-           rom=2;
-			zx_cpu_ram[0]=zx_rom_bank[2];// tr-dos
-			
-            }
-			
-		}
-	  
-//      }
-	  
-		if (trdos) if ((Z80_PCH(cpu_zx) & 0xc0))// выход из trdos если в RAM
-		{
-		 trdos = false;
-         rom_select(); // переключение ПЗУ по портам  
-		}
-		//=======================================================================================
-			// Если нажали клавишу NMI // QUORUM // SCORPION
-		//	if (main_nmi_key)
-		//	{
-                
-         //   	 main_nmi_key = false;
-
-//z80_run(&cpu_zx, 1);
-         //   }
-		//    if (conf.mashine == NOVA256)
-	    	//	{
-			//		rom=3;
-			// НОВЫЙ ЭМУЛЯТОР	
-           // 	zx_cpu_ram[0] = zx_rom_bank[3]; zx_0000_lastOut = 0; z80_nmi(&cpu_zx);
-        //     } // QUORUM
-
-        //   if (conf.mashine == SCORP256)
-	    //		{
-		//			rom=3;
-				// НОВЫЙ ЭМУЛЯТОР	
-         //       	 zx_cpu_ram[0] = zx_rom_bank[3];  z80_nmi(&cpu_zx);
-           //      } // 
-
-
-         //   if (conf.mashine == PENT_512CASH) // Пентагон 512 с кеш
-	    //		{
-					// zx_7ffd_lastOut = zx_7ffd_lastOut | 0x10;
-					// zx_7ffd_lastOut = zx_7ffd_lastOut & 0xef;
-				//	  cash_f = 1;
-				// НОВЫЙ ЭМУЛЯТОР		
-               //   z80_nmi(&cpu_zx);
-          //       } // 
-			
-
-/*             if (conf.mashine == PENT1024) // Пентагон 1024
-	    		{
-				 //	 zx_7ffd_lastOut = zx_7ffd_lastOut | 0x10;
-					// zx_7ffd_lastOut = zx_7ffd_lastOut & 0xef;
-										rom=3;
-					 zx_cpu_ram[0] = zx_rom_bank[3]; 
-					  z80_gen_nmi(&cpu); } //  
-			}
-
-*/
-		//=======================================================================================	
-
-/*if (trdos)*/ WD1793_Execute();
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////
-		
-
 		// Цикл ождания пока количество потраченных тактов реального процессора
 		// меньше количества расчетных тактов реального процессора на команду Z80
  
-	//if (conf.turbo==0)
+	  //if (conf.turbo==0)
     { 
     
    while (((get_ticks()-t0_time_ticks)&0xffffff)<d_dst_time_ticks);
@@ -2881,20 +2891,6 @@ if (   (inx_tick_screen<32) &&  (int_enable))
      
         dt_cpu = z80_run(&cpu_zx, 1);
         tape_cycle_count += dt_cpu;
-//gpio_put(LED_BOARD, 0);
-
-        // Сброс линии INT после обработки
- /*        if (int_enable ) {
-            static uint8_t x = 0;
-            if (x>5) 
-            {
-            z80_int(&cpu_zx, Z_FALSE);
-            x=0;
-            int_enable = false;
-            }
-            x++;
-        } */
-
 
         // Сброс линии INT после обработки
         if (int_enable && !(cpu_zx.request & Z80_REQUEST_INT)) {
@@ -2941,11 +2937,7 @@ if (   (inx_tick_screen<32) &&  (int_enable))
 		register int img_inx=(inx_tick_screen-conf.shift_img);
 
   	//	if (img_inx<0 || (img_inx>=(T_per_line*240))){ //область изображения, если вне, то не рисуем
-	 if  (img_inx>=(53760))  continue; //область изображения, если вне, то не рисуем
-			
-	  
-		
-
+	    if  (img_inx>=(53760))  continue; //область изображения, если вне, то не рисуем		
 		//смещения бордера
 		const int dy=24;
 		const int dx=32;
@@ -3082,12 +3074,15 @@ void init_mashine_and_extram(uint8_t config_mashine) // инициализаци
 */
 //conf.shift_img=(((16+40)*224)+48);//
     conf.shift_img=12582;
+ //   main_nmi_key = false;
     
  // zx_cpu_init(&cpu_zx);  // одна строка инициализации
 
     select_cpu_z80(&cpu_zx);
 
     setZxExtKeysDefault();
+
+   main_loop_DOS = dos_default;
 
 	switch (config_mashine)
 	{
@@ -3107,26 +3102,25 @@ void init_mashine_and_extram(uint8_t config_mashine) // инициализаци
     machine_Pentagon_1024(&cpu_zx);
 		break; //
 	case SCORP256:
-      //  main_nmi_key = true;
+        main_loop_DOS = dos_scorpion;
         machine_Scorpion_256(&cpu_zx);   
 		break; //
  
-    // #ifndef NO_GMX     
-	case GMX2048:
+    case GMX2048:
         machine_Scorpion_GMX(&cpu_zx);
 		break; //
-    //  #endif    
 
 	case NOVA256:
-      //    main_nmi_key = true;
-          machine_NOVA_256(&cpu_zx);
+        machine_NOVA_256(&cpu_zx);
 		break; //
-    
+
     case QUORUM1024:
+        main_loop_DOS = dos_quorum;
         machine_Quorum1024(&cpu_zx);
         break;
 
     case QUORUM1024:
+        main_loop_DOS = dos_quorum;
         machine_Quorum1024(&cpu_zx);
         break;
 
@@ -3136,6 +3130,7 @@ void init_mashine_and_extram(uint8_t config_mashine) // инициализаци
 		break; //
 
 	case PENT_512CASH :// Пентагон 512 с кеш
+    //    main_nmi_key = true;
         machine_Pentagon_512_cash(&cpu_zx);
 		break; //
 
@@ -3155,18 +3150,18 @@ void turbo_switch(void)
      switch (conf.turbo)
      {
      case 0:
-        ticks_per_cycle = CPU_KHZ / 3500; // 108
+        ticks_per_cycle = cpu_pico_khz / 3500; // 108
        // ticks_per_frame = 71680;          // 71680- Пентагон //70908 - 128 +2A
       //  ticks_per_frame_0 = ticks_per_frame;
         break;
      case 1:
-        ticks_per_cycle = 1;//CPU_KHZ /5250;//CPU_KHZ / (3500*3);// 5250; // 
-       // ticks_per_cycle = CPU_KHZ / 7000; // 108
+        ticks_per_cycle = 1;//cpu_pico_khz /5250;//cpu_pico_khz / (3500*3);// 5250; // 
+       // ticks_per_cycle = cpu_pico_khz / 7000; // 108
      //   ticks_per_frame = (71680);        // 71680- Пентагон //70908 - 128 +2A 1.5
      //   ticks_per_frame_0 = ticks_per_frame;
         break;   
      // case 2:
-     //   ticks_per_cycle = 1;//CPU_KHZ /28000; // 54
+     //   ticks_per_cycle = 1;//cpu_pico_khz /28000; // 54
     //    ticks_per_frame = 71680;    //=107520//120000;//71680*2 ;// 71680- Пентагон //70908 - 128 +2A
   
         break;          
@@ -3176,3 +3171,48 @@ void turbo_switch(void)
      }
 
 }
+
+// На заметку ;)
+			// Если нажали клавишу NMI // QUORUM // SCORPION
+		//	if (main_nmi_key)
+		//	{
+                
+         //   	 main_nmi_key = false;
+
+//z80_run(&cpu_zx, 1);
+         //   }
+		//    if (conf.mashine == NOVA256)
+	    	//	{
+			//		rom=3;
+			// НОВЫЙ ЭМУЛЯТОР	
+           // 	zx_cpu_ram[0] = zx_rom_bank[3]; zx_0000_lastOut = 0; z80_nmi(&cpu_zx);
+        //     } // QUORUM
+
+        //   if (conf.mashine == SCORP256)
+	    //		{
+		//			rom=3;
+				// НОВЫЙ ЭМУЛЯТОР	
+         //       	 zx_cpu_ram[0] = zx_rom_bank[3];  z80_nmi(&cpu_zx);
+           //      } // 
+
+
+         //   if (conf.mashine == PENT_512CASH) // Пентагон 512 с кеш
+	    //		{
+					// zx_7ffd_lastOut = zx_7ffd_lastOut | 0x10;
+					// zx_7ffd_lastOut = zx_7ffd_lastOut & 0xef;
+				//	  cash_f = 1;
+				// НОВЫЙ ЭМУЛЯТОР		
+               //   z80_nmi(&cpu_zx);
+          //       } // 
+			
+
+/*             if (conf.mashine == PENT1024) // Пентагон 1024
+	    		{
+				 //	 zx_7ffd_lastOut = zx_7ffd_lastOut | 0x10;
+					// zx_7ffd_lastOut = zx_7ffd_lastOut & 0xef;
+										rom=3;
+					 zx_cpu_ram[0] = zx_rom_bank[3]; 
+					  z80_gen_nmi(&cpu); } //  
+			}
+
+*/
