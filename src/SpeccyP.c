@@ -3,8 +3,6 @@
 #include <stdio.h>
 #include "SpeccyP.h"
 
-#include "SpeccyP.h"
-
 #include "hardware/gpio.h"
 //#include "hardware/adc.h"
 
