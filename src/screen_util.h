@@ -8,9 +8,9 @@
 
 
 //#include "font6x8revers_new.h"
-#include "font6x8.h"
+#include "font6x9.h"
 
-#define FONT   FONT_6x8_DATA
+#define FONT   FONT_6x9_DATA
 #define FONT_W (6)
 #define FONT_H (9)
 

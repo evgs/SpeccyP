@@ -1,7 +1,7 @@
 #pragma once
 #include "inttypes.h"
 
-static const uint8_t FONT_6x8_DATA[] = {
+static const uint8_t FONT_6x9_DATA[] = {
 0,
 //0x1F ,0x11 ,0x11 ,0x11 ,0x11 ,0x11 ,0x1F ,0x00 , 0,//(0x00)0  
        0b00000000,
