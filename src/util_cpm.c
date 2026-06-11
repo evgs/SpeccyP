@@ -145,8 +145,8 @@ bool ReadCPMDir(char *file_name,char *disk_name, bool open_file)
 
         int p=3;
         for (int i=0; i<11; i++) {
-            if (i == 8) { symb[p++] = '.'; }
-            symb[p++] = entry.nametype[i] & 0x7f;
+            if (i == 8) { temp_msg[p++] = '.'; }
+            temp_msg[p++] = entry.nametype[i] & 0x7f;
         }
         temp_msg[p] = 0;
 
