@@ -744,9 +744,12 @@ void init_and_info()
 //#endif   
 
 #ifdef PICO_RP2350 
+    gpio_put(LED_BOARD, 0); // KEEP LED OFF HERE!!!
   // определение RP2350 A или B  
      rp2350a = (*((io_ro_32*)(SYSINFO_BASE + SYSINFO_PACKAGE_SEL_OFFSET)) & 1);
       psram_pin_cs = rp2350a ? PSRAM_BUTTER_PIN_CS : 47;
+    //gpio_put(LED_BOARD, 0); // NOT HERE!!!
+
 
 // для корректного запуска с бутербродом PSRAM  
     gpio_init(psram_pin_cs);
