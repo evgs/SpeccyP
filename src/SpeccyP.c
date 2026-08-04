@@ -761,6 +761,7 @@ void init_and_info()
     gpio_put(24, 1);
 #endif
 
+    init_psram_board_all_version();// инициализация всех видов psram
 
 //  GPIO 23 // Drive high to force power supply into PWM mode (lower ripple on 3V3 at light loads)
 // MODE=0 (PFM — Pulse Frequency Modulation)
@@ -886,7 +887,6 @@ if (conf.mashine==QUORUM1024) conf.Disks[0][0] =0 ;
   else  init_usb_hid(); // USB HID
 #endif
 
- init_psram_board_all_version();// инициализация всех видов psram
 //    psram_avaiable =0;
 //    type_psram=NOT_PSRAM;
 //#####################################################################	
