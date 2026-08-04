@@ -118,7 +118,7 @@ else()
     set(SPECCY_CONFIG_DEFINITIONS 
 
         CPU_MHZ=378
-        FLASH_MAX_FREQ_MHZ=166  ## для Winbond 133 
+        FLASH_MAX_FREQ_MHZ=66  ## для Winbond 133 
         PSRAM_MAX_FREQ_MHZ=166
         TEST_DEBUG #
     )
