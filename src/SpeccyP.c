@@ -1550,7 +1550,7 @@ int fast(main)(void){
     vreg_disable_voltage_limit();
     vreg_set_voltage(VREG_VOLTAGE_1_30);
 
-    set_sys_clock_khz(252*1000, 0);// стартовая частота pico
+    //set_sys_clock_khz(252*1000, 0);// стартовая частота pico
    
 #if LED_BOARD != 255
     gpio_init(LED_BOARD);
